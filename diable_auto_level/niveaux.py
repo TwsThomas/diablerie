@@ -39,7 +39,7 @@ def first_niveaux(n):
 def generer_niveau(n):
 
     if n < 3: # first level are hardcoded
-        return first_niveaux(1)
+        return first_niveaux(n)
     
     hauteur_base = 360
     ecart = max(120 - n * 5, 60)  # les plateformes se rapprochent à mesure que n augmente
@@ -51,11 +51,11 @@ def generer_niveau(n):
         y = hauteur_base - i * 40 - random.randint(0, 30)
         platforms.append(pygame.Rect(x, y, 100, 20))
 
-    # Génération des ennemis (1 ennemi tous les 2 niveaux)
+    # Génération des ennemis (+1 ennemi tous les 2 niveaux)
     enemies = []
     enemy_direction = []
-    for i in range(n // 2):
-        x = 200 + i * 200
+    for i in range(n // 2 + 1):
+        x = 250 + i * 200
         enemy = pygame.Rect(x, 320, 40, 40)
         enemies.append(enemy)
         enemy_direction.append(random.choice([-2, 2]))
