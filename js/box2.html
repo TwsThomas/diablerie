@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Plateformer Simple</title>
+  <style>
+    canvas {
+      border: 2px solid black;
+      display: block;
+      margin: 20px auto;
+      background-color: skyblue;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const keys = {};
+    const gravity = 0.5;
+
+    const player = {
+      x: 100,
+      y: 300,
+      width: 40,
+      height: 40,
+      dx: 0,
+      dy: 0,
+      speed: 3,
+      jumpForce: -10,
+      grounded: false,
+      color: "red",
+    };
+
+    const ground = { x: 0, y: 360, width: canvas.width, height: 40, color: "green" };
+
+    const platforms = [
+      ground,
+      { x: 200, y: 280, width: 100, height: 20, color: "brown" },
+      { x: 400, y: 200, width: 100, height: 20, color: "brown" },
+      { x: 600, y: 250, width: 100, height: 20, color: "brown" },
+    ];
+
+    const enemies = [
+      { x: 500, y: 320, width: 40, height: 40, dx: 2, color: "darkred" },
+    ];
+
+    const coins = [
+      { x: 220, y: 240, radius: 8, collected: false },
+      { x: 420, y: 160, radius: 8, collected: false },
+      { x: 620, y: 210, radius: 8, collected: false },
+    ];
+
+    let score = 0;
+
+    document.addEventListener("keydown", (e) => {
+      keys[e.code] = true;
+    });
+
+    document.addEventListener("keyup", (e) => {
+      keys[e.code] = false;
+    });
+
+    function collide(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.width > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.height > b.y;
+    }
+
+    function update() {
+      // Mouvement joueur
+      if (keys["ArrowLeft"]) player.dx = -player.speed;
+      else if (keys["ArrowRight"]) player.dx = player.speed;
+      else player.dx = 0;
+
+      if (keys["Space"] && player.grounded) {
+        player.dy = player.jumpForce;
+        player.grounded = false;
+      }
+
+      player.dy += gravity;
+      player.x += player.dx;
+      player.y += player.dy;
+
+      player.grounded = false;
+      for (let plat of platforms) {
+        if (player.y + player.height <= plat.y + 5 && // chute
+            player.y + player.height + player.dy >= plat.y &&
+            player.x + player.width > plat.x &&
+            player.x < plat.x + plat.width) {
+          player.y = plat.y - player.height;
+          player.dy = 0;
+          player.grounded = true;
+        }
+      }
+
+      // Ennemis qui bougent
+      for (let enemy of enemies) {
+        enemy.x += enemy.dx;
+        if (enemy.x <= 400 || enemy.x + enemy.width >= 760) {
+          enemy.dx *= -1;
+        }
+
+        // Collision joueur - ennemi
+        if (collide(player, enemy)) {
+            // print message
+            alert("Vous avez été touché par un ennemi !");
+          // console.log("Game Over !");
+          document.location.reload();
+        }
+      }
+
+      // Ramassage des pièces
+      for (let coin of coins) {
+        if (!coin.collected) {
+          let distX = player.x + player.width / 2 - coin.x;
+          let distY = player.y + player.height / 2 - coin.y;
+          let dist = Math.sqrt(distX * distX + distY * distY);
+          if (dist < player.width / 2 + coin.radius) {
+            coin.collected = true;
+            score++;
+          }
+        }
+      }
+
+      // Limites écran
+      if (player.x < 0) player.x = 0;
+      if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Plateformes
+      for (let plat of platforms) {
+        ctx.fillStyle = plat.color;
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      }
+
+      // Joueur
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+
+      // Ennemis
+      for (let enemy of enemies) {
+        ctx.fillStyle = enemy.color;
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+      }
+
+      // Pièces
+      for (let coin of coins) {
+        if (!coin.collected) {
+          ctx.beginPath();
+          ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+          ctx.fillStyle = "gold";
+          ctx.fill();
+          ctx.closePath();
+        }
+      }
+
+      // Score
+      ctx.fillStyle = "black";
+      ctx.font = "20px Arial";
+      ctx.fillText("Score : " + score, 10, 30);
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
