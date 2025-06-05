@@ -72,12 +72,9 @@ def afficher_victoire():
 font = pygame.font.SysFont(None, 28)
 
 def rainbow(i):
-    """Retourne le nom d'une couleur pastel ou sombre pour l'index i (0-19)."""
     color_keys = [
         "pastel_red", "pastel_orange", "pastel_yellow", "pastel_green", "pastel_blue",
-        "pastel_purple", "pastel_pink", "dark_red", "dark_orange", "dark_yellow",
-        "dark_green", "dark_blue", "dark_purple", "dark_grey", "pastel_red",
-        "pastel_green", "pastel_blue", "pastel_purple", "dark_red", "dark_blue"
+        "pastel_purple", "pastel_pink"
     ]
     return color_keys[i % len(color_keys)]
 
@@ -155,7 +152,7 @@ while True:
             charger_niveau(niveau)
 
     # Dessin
-    screen.fill((135, 206, 235))
+    screen.fill(COLORS["pastel_blue"])
 
     # Affichage des 20 traits verticaux numérotés
     nb_traits = 20
