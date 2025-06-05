@@ -54,10 +54,20 @@ score = 0
 etat_jeu = "menu"
 
 def charger_niveau(n):
-    global platforms, enemies, enemy_direction, coins, score, player
+    global platforms, enemies, enemy_direction, coins, score, player, flying_enemies, flying_enemy_direction, flying_enemy_dy
     player.x, player.y = 100, 300
     score = 0
     platforms, enemies, enemy_direction, coins = generer_niveau(n)
+    # Ajout des ennemis bleus volants
+    flying_enemies = []
+    flying_enemy_direction = []
+    flying_enemy_dy = []
+    # Exemple : 2 ennemis volants par niveau, placés à des hauteurs différentes
+    for i in range(2):
+        rect = pygame.Rect(200 + i * 300, 120 + 40 * i, 40, 40)
+        flying_enemies.append(rect)
+        flying_enemy_direction.append(2 * (-1 if i % 2 == 0 else 1))  # gauche/droite
+        flying_enemy_dy.append(1.5 * (1 if i % 2 == 0 else -1))       # haut/bas
 
 def afficher_menu():
     screen.fill(BLUE)
@@ -77,7 +87,7 @@ console_font = pygame.font.SysFont(None, 22)
 # Console debug
 debug_logs = []
 
-def log_debug(msg):
+def log(msg):
     debug_logs.append(str(msg))
     if len(debug_logs) > 18:
         debug_logs.pop(0)
@@ -137,12 +147,26 @@ while True:
                 player.bottom = plat.top
                 player_dy = 0
                 grounded = True
+                log(f"Player landed on platform at {plat}")
 
     # Ennemis
     for i, enemy in enumerate(enemies):
         enemy.x += enemy_direction[i]
-        if enemy.left < 100 or enemy.right > WIDTH - 100:
+        if enemy.left < 100 or enemy.right > WIDTH - CONSOLE_WIDTH - 100:
             enemy_direction[i] *= -1
+        if player.colliderect(enemy):
+            etat_jeu = "menu"
+
+    # Ennemis volants bleus
+    for i, enemy in enumerate(flying_enemies):
+        enemy.x += flying_enemy_direction[i]
+        enemy.y += flying_enemy_dy[i]
+        # Rebondit sur les bords horizontaux
+        if enemy.left < 100 or enemy.right > WIDTH - CONSOLE_WIDTH - 100:
+            flying_enemy_direction[i] *= -1
+        # Rebondit sur le haut/bas de la zone de jeu
+        if enemy.top < 40 or enemy.bottom > HEIGHT - 40:
+            flying_enemy_dy[i] *= -1
         if player.colliderect(enemy):
             etat_jeu = "menu"
 
@@ -153,6 +177,7 @@ while True:
             if dist < 30:
                 coin["collected"] = True
                 score += 1
+                log(f"Coin collected at {coin['pos']} - Score: {score}")
 
     # Changer de niveau
     if all(c["collected"] for c in coins):
@@ -163,18 +188,15 @@ while True:
             charger_niveau(niveau)
 
     # Exemple de log debug (ajoutez ce que vous voulez)
-    log_debug(f"Player: x={player.x}, y={player.y}, grounded={grounded}")
+    # log(f"Player: x={player.x}, y={player.y}, grounded={grounded}")
 
     # Dessin
     screen.fill(COLORS["pastel_blue"])
 
-    # Affichage des 20 traits verticaux numérotés
-    nb_traits = 20
-    espace = WIDTH // (nb_traits + 1)
-    for i in range(nb_traits):
-        x = (i + 1) * espace
-        pygame.draw.line(screen, COLORS[rainbow(i)], (x, 0), (x, HEIGHT), 1)
-        num_txt = font.render(str(i + 1), True, COLORS[rainbow(i)])
+    # Affichage des traits verticaux tous les 100 pixels
+    for x in range(100, WIDTH - CONSOLE_WIDTH, 100):
+        pygame.draw.line(screen, COLORS[rainbow(x // 100)], (x, 0), (x, HEIGHT), 1)
+        num_txt = font.render(str(x // 100), True, COLORS[rainbow(x // 100)])
         screen.blit(num_txt, (x - num_txt.get_width() // 2, 5))
 
     for plat in platforms:
@@ -182,6 +204,10 @@ while True:
 
     for enemy in enemies:
         pygame.draw.rect(screen, (139, 0, 0), enemy)
+
+    # Dessin des ennemis volants bleus
+    for enemy in flying_enemies:
+        pygame.draw.rect(screen, BLUE, enemy)
 
     pygame.draw.rect(screen, RED, player)
 
@@ -198,8 +224,8 @@ while True:
     pygame.draw.line(screen, (0, 0, 0), (WIDTH - CONSOLE_WIDTH, 0), (WIDTH - CONSOLE_WIDTH, HEIGHT), 2)
     console_title = console_font.render("DEBUG CONSOLE", True, (255, 255, 255))
     screen.blit(console_title, (WIDTH - CONSOLE_WIDTH + 10, 10))
-    for i, log in enumerate(debug_logs[-16:]):
-        txt = console_font.render(log, True, (200, 200, 200))
+    for i, ll in enumerate(debug_logs[-16:]):
+        txt = console_font.render(ll, True, (200, 200, 200))
         screen.blit(txt, (WIDTH - CONSOLE_WIDTH + 10, 35 + i * 22))
 
     pygame.display.flip()
