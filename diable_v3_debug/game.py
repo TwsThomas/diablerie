@@ -4,7 +4,9 @@ import sys
 from niveaux import generer_niveau
 
 pygame.init()
-WIDTH, HEIGHT = 800, 400
+WIDTH, HEIGHT = 1000, 400  # élargir pour la console debug
+CONSOLE_WIDTH = 200
+
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Plateformer avec Niveaux")
 clock = pygame.time.Clock()
@@ -70,6 +72,15 @@ def afficher_victoire():
     pygame.display.flip()
 
 font = pygame.font.SysFont(None, 28)
+console_font = pygame.font.SysFont(None, 22)
+
+# Console debug
+debug_logs = []
+
+def log_debug(msg):
+    debug_logs.append(str(msg))
+    if len(debug_logs) > 18:
+        debug_logs.pop(0)
 
 def rainbow(i):
     color_keys = [
@@ -151,6 +162,9 @@ while True:
         else:
             charger_niveau(niveau)
 
+    # Exemple de log debug (ajoutez ce que vous voulez)
+    log_debug(f"Player: x={player.x}, y={player.y}, grounded={grounded}")
+
     # Dessin
     screen.fill(COLORS["pastel_blue"])
 
@@ -178,6 +192,15 @@ while True:
     # Score
     txt = font.render(f"Score: {score}  -  Niveau: {niveau} / 10", True, WHITE)
     screen.blit(txt, (10, 10))
+
+    # Affichage de la console debug à droite
+    pygame.draw.rect(screen, COLORS["dark_grey"], (WIDTH - CONSOLE_WIDTH, 0, CONSOLE_WIDTH, HEIGHT))
+    pygame.draw.line(screen, (0, 0, 0), (WIDTH - CONSOLE_WIDTH, 0), (WIDTH - CONSOLE_WIDTH, HEIGHT), 2)
+    console_title = console_font.render("DEBUG CONSOLE", True, (255, 255, 255))
+    screen.blit(console_title, (WIDTH - CONSOLE_WIDTH + 10, 10))
+    for i, log in enumerate(debug_logs[-16:]):
+        txt = console_font.render(log, True, (200, 200, 200))
+        screen.blit(txt, (WIDTH - CONSOLE_WIDTH + 10, 35 + i * 22))
 
     pygame.display.flip()
     clock.tick(60)
