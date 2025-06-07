@@ -88,8 +88,8 @@ class Player(Entity):
         self.right = False
         self.left = False
         self.speed = 1.4
-        self.jumps = 2
-        self.jumps_max = 2
+        self.jumps = 20
+        self.jumps_max = 20
         self.jumping = False
         self.jump_rot = 0
         self.air_time = 0
@@ -164,7 +164,7 @@ def lookup_nearby(tiles, pos):
 
 GLOW_CACHE = {}
 
-def glow_img(size, color):
+def glow_img(size, color): 
     if (size, color) not in GLOW_CACHE:
         surf = pygame.Surface((size * 2 + 2, size * 2 + 2))
         pygame.draw.circle(surf, color, (surf.get_width() // 2, surf.get_height() // 2), size)
