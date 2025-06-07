@@ -220,6 +220,9 @@ def init_game_state():
     state['stack_heights'] = [WINDOW_TILE_SIZE[1] - 1 for _ in range(WINDOW_TILE_SIZE[0] - 2)]
     state['stack_heights'][0] -= 1
     state['stack_heights'][-1] -= 1
+    state['tile_drop_rects'] = []  # Initialize as empty list for safety
+    state['tile_rects'] = []  # Ensure always present
+    state['base_row'] = 0      # Ensure always present
     # Initial tile setup
     for i in range(WINDOW_TILE_SIZE[0] - 2):
         state['tiles'][(i + 1, WINDOW_TILE_SIZE[1] - 1)] = 'tile'
@@ -332,6 +335,8 @@ def handle_tile_drops(state):
         state['display'].blit(tile_img, (tile[0], tile[1] + state['height']))
         if tile[2] == 'chest':
             state['display'].blit(ghost_chest_img, (tile[0], tile[1] + state['height'] - TILE_SIZE))
+
+    state['tile_drop_rects'] = tile_drop_rects
 
 def draw_tiles(state):
     # === Draw all placed tiles and chests ===
