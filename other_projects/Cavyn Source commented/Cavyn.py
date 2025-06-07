@@ -191,7 +191,21 @@ def glow_img(size, color):
 def main():
     setup_pygame()
     state = init_game_state()
-    run_game_loop(state)
+    while True:
+        display = state.display
+        display.fill((22, 19, 40))
+        state.master_clock += 1
+        state.update_bg_particles()
+        state.handle_tile_drops()
+        state.draw_tiles()
+        state.draw_items()
+        state.update_player()
+        state.update_sparks()
+        state.draw_ui()
+        state.handle_events()
+        state.screen.blit(pygame.transform.scale(display, state.screen.get_size()), (0, 0))
+        pygame.display.update()
+        state.clock.tick(60)
 
 
 def init_game_state():
@@ -232,345 +246,301 @@ def init_game_state():
             # Music
             pygame.mixer.music.load('data/music.wav')
             pygame.mixer.music.play(-1)
-    return GameState()
 
-def run_game_loop(state):
-    while True:
-        handle_frame(state)
-
-def handle_frame(state):
-    display = state.display
-    display.fill((22, 19, 40))
-    state.master_clock += 1
-    update_bg_particles(state)
-    handle_tile_drops(state)
-    draw_tiles(state)
-    draw_items(state)
-    update_player(state)
-    update_sparks(state)
-    draw_ui(state)
-    handle_events(state)
-    state.screen.blit(pygame.transform.scale(display, state.screen.get_size()), (0, 0))
-    pygame.display.update()
-    state.clock.tick(60)
-
-def update_bg_particles(state):
-    display = state.display
-    parallax = random.random()
-    for _ in range(2):
-        state.bg_particles.append([[random.random() * DISPLAY_SIZE[0], DISPLAY_SIZE[1] - state.height * parallax], parallax, random.randint(1, 8), random.random() * 1 + 1, random.choice([(0, 0, 0), (22, 19, 40)])])
-    for i, p in sorted(enumerate(state.bg_particles), reverse=True):
-        size = p[2]
-        if p[-1] != (0, 0, 0):
-            size = size * 5 + 4
-        p[2] -= 0.01
-        p[0][1] -= p[3]
-        if size < 1:
-            display.set_at((int(p[0][0]), int(p[0][1] + state.height * p[1])), (0, 0, 0))
-        else:
-            if p[-1] != (0, 0, 0):
-                pygame.draw.circle(display, p[-1], p[0], int(size), 4)
-            else:
-                pygame.draw.circle(display, p[-1], p[0], int(size))
-        if size < 0:
-            state.bg_particles.pop(i)
-
-def handle_tile_drops(state):
-    if state.master_clock > 180:
-        state.game_timer += 1
-        if state.game_timer > 10 + 25 * (20000 - min(20000, state.master_clock)) / 20000:
-            state.game_timer = 0
-            minimum = min(state.stack_heights)
-            options = []
-            for i, stack in enumerate(state.stack_heights):
-                if i != state.last_place:
-                    offset = stack - minimum
-                    for j in range(int(offset ** (2.2 - min(20000, state.master_clock) / 10000)) + 1):
-                        options.append(i)
-
-            tile_type = 'tile'
-            if random.randint(1, 10) == 1:
-                tile_type = 'chest'
-            c = random.choice(options)
-            state.last_place = c
-            state.tile_drops.append([(c + 1) * TILE_SIZE, -state.height - TILE_SIZE, tile_type])
-
-    # === Update and draw falling tiles ===
-    tile_drop_rects = []
-    for i, tile in sorted(enumerate(state.tile_drops), reverse=True):
-        tile[1] += 1.4  # Gravity
-        pos = [tile[0] + TILE_SIZE // 2, tile[1] + TILE_SIZE]
-        r = pygame.Rect(tile[0], tile[1], TILE_SIZE, TILE_SIZE)
-        tile_drop_rects.append(r)
-
-        # === Player dies if hit by falling tile ===
-        if r.colliderect(state.player.rect):
-            if not state.dead:
-                sounds['death'].play()
-                state.player.velocity = [1.3, -6]
-                for i in range(380):
-                    angle = random.random() * math.pi
-                    speed = random.random() * 1.5
-                    physics_on = random.choice([False, True, True])
-                    state.sparks.append([state.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 2, 2), physics_on, 0.1 * physics_on])
-            state.dead = True
-
-        check_pos = (int(pos[0] // TILE_SIZE), int(math.floor(pos[1] / TILE_SIZE)))
-        if check_pos in state.tiles:
-            state.tile_drops.pop(i)
-            place_pos = (check_pos[0], check_pos[1] - 1)
-            state.stack_heights[place_pos[0] - 1] = place_pos[1]
-            state.tiles[place_pos] = tile[2]
-            sounds['block_land'].play()
-            if state.tiles[check_pos] == 'chest':
-                state.tiles[check_pos] = 'tile'
-                sounds['chest_destroy'].play()
-                for i in range(100):
-                    angle = random.random() * math.pi * 2
-                    speed = random.random() * 2.5
-                    state.sparks.append([[place_pos[0] * TILE_SIZE + TILE_SIZE // 2, place_pos[1] * TILE_SIZE + TILE_SIZE // 2], [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.09, (12, 8, 2), False, 0.1])
-            continue
-        if random.randint(1, 4) == 1:
-            side = random.choice([1, -1])
-            state.sparks.append([[tile[0] + TILE_SIZE * (side == 1), tile[1]], [random.random() * 0.1 - 0.05, random.random() * 0.5], random.random() * 5 + 3, 0.15, (4, 2, 12), False, 0])
-        state.display.blit(tile_img, (tile[0], tile[1] + state.height))
-        if tile[2] == 'chest':
-            state.display.blit(ghost_chest_img, (tile[0], tile[1] + state.height - TILE_SIZE))
-
-    state.tile_drop_rects = tile_drop_rects
-
-def draw_tiles(state):
-    # === Draw all placed tiles and chests ===
-    state.tile_rects = []
-    for tile in state.tiles:
-        state.display.blit(tile_img, (TILE_SIZE * tile[0], TILE_SIZE * tile[1] + int(state.height)))
-        if state.tiles[tile] == 'placed_tile':
-            state.display.blit(placed_tile_img, (TILE_SIZE * tile[0], TILE_SIZE * tile[1] + int(state.height)))
-        if state.tiles[tile] == 'chest':
-            state.display.blit(chest_img, (TILE_SIZE * tile[0], TILE_SIZE * (tile[1] - 1) + int(state.height)))
-            chest_r = pygame.Rect(TILE_SIZE * tile[0] + 2, TILE_SIZE * (tile[1] - 1) + 6, TILE_SIZE - 4, TILE_SIZE - 6)
-            if random.randint(1, 20) == 1:
-                state.sparks.append([[tile[0] * TILE_SIZE + 2 + 12 * random.random(), (tile[1] - 1) * TILE_SIZE + 4 + 8 * random.random()], [0, random.random() * 0.25 - 0.5], random.random() * 4 + 2, 0.023, (12, 8, 2), True, 0.002])
-            if chest_r.colliderect(state.player.rect):
-                sounds['chest_open'].play()
-                for i in range(50):
-                    state.sparks.append([[tile[0] * TILE_SIZE + 8, (tile[1] - 1) * TILE_SIZE + 8], [random.random() * 2 - 1, random.random() - 2], random.random() * 3 + 3, 0.01, (12, 8, 2), True, 0.05])
-                state.tiles[tile] = 'opened_chest'
-                state.player.jumps += 1
-                state.player.attempt_jump(state.sparks, state.player)
-                state.player.velocity[1] = -3.5
-                if random.randint(1, 5) < 3:
-                    state.items.append(Item(animation_manager, (tile[0] * TILE_SIZE + 5, (tile[1] - 1) * TILE_SIZE + 5), (6, 6), random.choice(['warp', 'cube', 'jump']), velocity=[random.random() * 5 - 2.5, random.random() * 2 - 5]))
+        def update_bg_particles(self):
+            display = self.display
+            parallax = random.random()
+            for _ in range(2):
+                self.bg_particles.append([[random.random() * DISPLAY_SIZE[0], DISPLAY_SIZE[1] - self.height * parallax], parallax, random.randint(1, 8), random.random() * 1 + 1, random.choice([(0, 0, 0), (22, 19, 40)])])
+            for i, p in sorted(enumerate(self.bg_particles), reverse=True):
+                size = p[2]
+                if p[-1] != (0, 0, 0):
+                    size = size * 5 + 4
+                p[2] -= 0.01
+                p[0][1] -= p[3]
+                if size < 1:
+                    display.set_at((int(p[0][0]), int(p[0][1] + self.height * p[1])), (0, 0, 0))
                 else:
-                    for i in range(random.randint(2, 6)):
-                        state.items.append(Item(animation_manager, (tile[0] * TILE_SIZE + 5, (tile[1] - 1) * TILE_SIZE + 5), (6, 6), 'coin', velocity=[random.random() * 5 - 2.5, random.random() * 2 - 7]))
-        elif state.tiles[tile] == 'opened_chest':
-            state.display.blit(opened_chest_img, (TILE_SIZE * tile[0], TILE_SIZE * (tile[1] - 1) + int(state.height)))
+                    if p[-1] != (0, 0, 0):
+                        pygame.draw.circle(display, p[-1], p[0], int(size), 4)
+                    else:
+                        pygame.draw.circle(display, p[-1], p[0], int(size))
+                if size < 0:
+                    self.bg_particles.pop(i)
 
-    # === Check if row is filled to clear and scroll up ===
-    base_row = max(state.tiles, key=lambda x: x[1])[1] - 1
-    filled = True
-    for i in range(WINDOW_TILE_SIZE[0] - 2):
-        if (i + 1, base_row) not in state.tiles:
-            filled = False
-    if filled:
-        state.target_height = math.floor(state.height / TILE_SIZE) * TILE_SIZE + TILE_SIZE
-
-    if state.height != state.target_height:
-        state.height += (state.target_height - state.height) / 10
-        if abs(state.target_height - state.height) < 0.2:
-            state.height = state.target_height
-            for i in range(WINDOW_TILE_SIZE[0] - 2):
-                del state.tiles[(i + 1, base_row + 1)]
-
-    # === Draw edge tiles (left/right borders) ===
-    for i in range(WINDOW_TILE_SIZE[1] + 2):
-        pos_y = (-state.height // 16) - 1 + i
-        state.display.blit(edge_tile_img, (0, TILE_SIZE * pos_y + int(state.height)))
-        state.display.blit(edge_tile_img, (TILE_SIZE * (WINDOW_TILE_SIZE[0] - 1), TILE_SIZE * pos_y + int(state.height)))
-
-    state.tile_rects.append(pygame.Rect(0, state.player.pos[1] - 300, TILE_SIZE, 600))
-    state.tile_rects.append(pygame.Rect(TILE_SIZE * (WINDOW_TILE_SIZE[0] - 1), state.player.pos[1] - 300, TILE_SIZE, 600))
-    state.base_row = base_row
-
-def draw_items(state):
-    # === Update and draw all items ===
-    for i, item in sorted(enumerate(state.items), reverse=True):
-        lookup_pos = (int(item.center[0] // TILE_SIZE), int(item.center[1] // TILE_SIZE))
-        if lookup_pos in state.tiles:
-            state.items.pop(i)
-            continue
-        item.update(state.tile_rects + lookup_nearby(state.tiles, item.center))
-        if item.time > 30:
-            if item.rect.colliderect(state.player.rect):
-                if item.type == 'coin':
-                    sounds['coin'].play()
-                    state.coins += 1
-                    for j in range(25):
-                        angle = random.random() * math.pi * 2
-                        speed = random.random() * 0.4
-                        physics_on = random.choice([False, False, False, False, True])
-                        state.sparks.append([item.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
-                else:
-                    sounds['collect_item'].play()
-                    for j in range(50):
-                        state.sparks.append([item.center.copy(), [random.random() * 0.3 - 0.15, random.random() * 6 - 3], random.random() * 4 + 3, 0.01, (12, 8, 2), False, 0])
-                    state.current_item = item.type
-                state.items.pop(i)
-                continue
-        r1 = int(9 + math.sin(state.master_clock / 30) * 3)
-        r2 = int(5 + math.sin(state.master_clock / 40) * 2)
-        state.display.blit(glow_img(r1, (12, 8, 2)), (item.center[0] - r1 - 1, item.center[1] + state.height - r1 - 2), special_flags=BLEND_RGBA_ADD)
-        state.display.blit(glow_img(r2, (24, 16, 3)), (item.center[0] - r2 - 1, item.center[1] + state.height - r2 - 2), special_flags=BLEND_RGBA_ADD)
-        item.render(state.display, (0, -state.height))
-
-def update_player(state):
-    # === Update player ===
-    if not state.dead:
-        state.player.update(state.tile_drop_rects + state.tile_rects + lookup_nearby(state.tiles, state.player.center), state.dead)
-    else:
-        state.player.opacity = 80
-        state.player.update([], state.dead)
-        state.player.rotation -= 16
-    state.player.render(state.display, (0, -int(state.height)))
-
-def update_sparks(state):
-    # === Update and draw all sparks (particles) ===
-    for i, spark in sorted(enumerate(state.sparks), reverse=True):
-        # pos, vel, size, decay, color, physics, gravity, dead
-        if len(spark) < 8:
-            spark.append(False)
-        if not spark[-1]:
-            spark[1][1] = min(spark[1][1] + spark[-2], 3)
-        spark[0][0] += spark[1][0]
-        if spark[5]:
-            if ((int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in state.tiles) or (spark[0][0] < TILE_SIZE) or (spark[0][0] > DISPLAY_SIZE[0] - TILE_SIZE):
-                spark[0][0] -= spark[1][0]
-                spark[1][0] *= -0.7
-        spark[0][1] += spark[1][1]
-        if spark[5]:
-            if (int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in state.tiles:
-                spark[0][1] -= spark[1][1]
-                spark[1][1] *= -0.7
-                if abs(spark[1][1]) < 0.1:
-                    spark[1][1] = 0
-                    spark[-1] = True
-        spark[2] -= spark[3]
-        if spark[2] <= 1:
-            state.sparks.pop(i)
-        else:
-            state.display.blit(glow_img(int(spark[2] * 1.5 + 2), (int(spark[4][0] / 2), int(spark[4][1] / 2), int(spark[4][2] / 2))), (spark[0][0] - spark[2] * 2, spark[0][1] + state.height - spark[2] * 2), special_flags=BLEND_RGBA_ADD)
-            state.display.blit(glow_img(int(spark[2]), spark[4]), (spark[0][0] - spark[2], spark[0][1] + state.height - spark[2]), special_flags=BLEND_RGBA_ADD)
-
-def draw_ui(state):
-    # === Draw UI borders ===
-    state.display.blit(border_img_light, (0, -math.sin(state.master_clock / 30) * 4 - 7))
-    state.display.blit(border_img, (0, -math.sin(state.master_clock / 40) * 7 - 14))
-    state.display.blit(pygame.transform.flip(border_img_light, False, True), (0, DISPLAY_SIZE[1] + math.sin(state.master_clock / 40) * 3 + 9 - border_img.get_height()))
-    state.display.blit(pygame.transform.flip(border_img, False, True), (0, DISPLAY_SIZE[1] + math.sin(state.master_clock / 30) * 3 + 16 - border_img.get_height()))
-
-    # === UI: coin counter, item slot, game over screen ===
-    if not state.dead:
-        state.display.blit(coin_icon, (4, 4))
-        black_font.render(str(state.coins), state.display, (13, 6))
-        white_font.render(str(state.coins), state.display, (12, 5))
-
-        state.display.blit(item_slot_img, (DISPLAY_SIZE[0] - 20, 4))
-        if state.current_item:
-            if (state.master_clock % 50 < 12) or (abs(state.master_clock % 50 - 20) < 3):
-                state.display.blit(item_slot_flash_img, (DISPLAY_SIZE[0] - 20, 4))
-            state.display.blit(item_icons[state.current_item], (DISPLAY_SIZE[0] - 15, 9))
-            if not state.item_used:
-                if (state.master_clock % 100 < 80) or (abs(state.master_clock % 100 - 90) < 3):
-                    black_font.render('press E/X to use', state.display, (DISPLAY_SIZE[0] - white_font.width('press E/X to use') - 23, 10))
-                    white_font.render('press E/X to use', state.display, (DISPLAY_SIZE[0] - white_font.width('press E/X to use') - 24, 9))
-    else:
-        black_font.render('game over', state.display, (DISPLAY_SIZE[0] // 2 - white_font.width('game over') // 2 + 1, 51))
-        white_font.render('game over', state.display, (DISPLAY_SIZE[0] // 2 - white_font.width('game over') // 2, 50))
-        coin_count_width = white_font.width(str(state.end_coin_count))
-        state.display.blit(coin_icon, (DISPLAY_SIZE[0] // 2 - (coin_count_width + 4 + coin_icon.get_width()) // 2, 63))
-        black_font.render(str(state.end_coin_count), state.display, ((DISPLAY_SIZE[0] + 5 + coin_icon.get_width()) // 2 - coin_count_width // 2, 65))
-        white_font.render(str(state.end_coin_count), state.display, ((DISPLAY_SIZE[0] + 4 + coin_icon.get_width()) // 2 - coin_count_width // 2, 64))
-        if state.master_clock % 3 == 0:
-            if state.end_coin_count != state.coins:
-                sounds['coin_end'].play()
-            state.end_coin_count = min(state.end_coin_count + 1, state.coins)
-        if (state.master_clock % 100 < 80) or (abs(state.master_clock % 100 - 90) < 3):
-            black_font.render('press R to restart', state.display, (DISPLAY_SIZE[0] // 2 - white_font.width('press R to restart') // 2 + 1, 79))
-            white_font.render('press R to restart', state.display, (DISPLAY_SIZE[0] // 2 - white_font.width('press R to restart') // 2, 78))
-
-def handle_events(state):
-    # === Handle all events (keyboard, quit, etc.) ===
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == KEYDOWN:
-            if event.key == K_ESCAPE:
-                pygame.quit()
-                sys.exit()
-            if event.key in [K_RIGHT, K_d]:
-                state.player.right = True
-            if event.key in [K_LEFT, K_a]:
-                state.player.left = True
-            if event.key in [K_UP, K_w, K_SPACE]:
-                if not state.dead:
-                    if state.player.jumps:
-                        sounds['jump'].play()
-                    state.player.attempt_jump(state.sparks, state.player)
-            if event.key in [K_e, K_x]:
-                if not state.dead:
-                    if state.current_item:
-                        state.item_used = True
-                    if state.current_item == 'warp':
-                        sounds['warp'].play()
-                        max_point = min(enumerate(state.stack_heights), key=lambda x: x[1])
-                        for i in range(60):
-                            angle = random.random() * math.pi * 2
-                            speed = random.random() * 3
-                            physics_on = random.choice([False, True])
-                            state.sparks.append([state.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
-                        state.player.pos[0] = (max_point[0] + 1) * TILE_SIZE + 4
-                        state.player.pos[1] = (max_point[1] - 1) * TILE_SIZE
-                        for i in range(60):
-                            angle = random.random() * math.pi * 2
-                            speed = random.random() * 1.75
+        def handle_tile_drops(self):
+            if self.master_clock > 180:
+                self.game_timer += 1
+                if self.game_timer > 10 + 25 * (20000 - min(20000, self.master_clock)) / 20000:
+                    self.game_timer = 0
+                    minimum = min(self.stack_heights)
+                    options = []
+                    for i, stack in enumerate(self.stack_heights):
+                        if i != self.last_place:
+                            offset = stack - minimum
+                            for j in range(int(offset ** (2.2 - min(20000, self.master_clock) / 10000)) + 1):
+                                options.append(i)
+                    tile_type = 'tile'
+                    if random.randint(1, 10) == 1:
+                        tile_type = 'chest'
+                    c = random.choice(options)
+                    self.last_place = c
+                    self.tile_drops.append([(c + 1) * TILE_SIZE, -self.height - TILE_SIZE, tile_type])
+            tile_drop_rects = []
+            for i, tile in sorted(enumerate(self.tile_drops), reverse=True):
+                tile[1] += 1.4
+                pos = [tile[0] + TILE_SIZE // 2, tile[1] + TILE_SIZE]
+                r = pygame.Rect(tile[0], tile[1], TILE_SIZE, TILE_SIZE)
+                tile_drop_rects.append(r)
+                if r.colliderect(self.player.rect):
+                    if not self.dead:
+                        sounds['death'].play()
+                        self.player.velocity = [1.3, -6]
+                        for i in range(380):
+                            angle = random.random() * math.pi
+                            speed = random.random() * 1.5
                             physics_on = random.choice([False, True, True])
-                            state.sparks.append([state.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
-                    if state.current_item == 'jump':
-                        sounds['super_jump'].play()
-                        state.player.jumps += 1
-                        state.player.attempt_jump(state.sparks, state.player)
-                        state.player.velocity[1] = -8
-                        for i in range(60):
-                            angle = random.random() * math.pi / 2 + math.pi / 4
-                            if random.randint(1, 5) == 1:
-                                angle = -math.pi / 2
-                            speed = random.random() * 3
-                            physics_on = random.choice([False, True])
-                            state.sparks.append([state.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
-                    if state.current_item == 'cube':
-                        sounds['block_land'].play()
-                        place_pos = (int(state.player.center[0] // TILE_SIZE), int(state.player.pos[1] // TILE_SIZE) + 1)
-                        state.stack_heights[place_pos[0] - 1] = place_pos[1]
-                        for i in range(place_pos[1], state.base_row + 2):
-                            state.tiles[(place_pos[0], i)] = 'placed_tile'
-                            for j in range(8):
-                                state.sparks.append([[place_pos[0] * TILE_SIZE + TILE_SIZE, i * TILE_SIZE + j * 2], [random.random() * 0.5, random.random() * 0.5 - 0.25], random.random() * 4 + 4, 0.02, (12, 8, 2), False, 0])
-                                state.sparks.append([[place_pos[0] * TILE_SIZE, i * TILE_SIZE + j * 2], [-random.random() * 0.5, random.random() * 0.5 - 0.25], random.random() * 4 + 4, 0.02, (12, 8, 2), False, 0])
-                    state.current_item = None
-            if event.key == K_r:
-                if state.dead:
-                    # === Reset all game state for restart ===
-                    new_state = init_game_state()
-                    for k in state.__dict__.keys():
-                        setattr(state, k, getattr(new_state, k))
+                            self.sparks.append([self.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 2, 2), physics_on, 0.1 * physics_on])
+                    self.dead = True
+                check_pos = (int(pos[0] // TILE_SIZE), int(math.floor(pos[1] / TILE_SIZE)))
+                if check_pos in self.tiles:
+                    self.tile_drops.pop(i)
+                    place_pos = (check_pos[0], check_pos[1] - 1)
+                    self.stack_heights[place_pos[0] - 1] = place_pos[1]
+                    self.tiles[place_pos] = tile[2]
+                    sounds['block_land'].play()
+                    if self.tiles[check_pos] == 'chest':
+                        self.tiles[check_pos] = 'tile'
+                        sounds['chest_destroy'].play()
+                        for i in range(100):
+                            angle = random.random() * math.pi * 2
+                            speed = random.random() * 2.5
+                            self.sparks.append([[place_pos[0] * TILE_SIZE + TILE_SIZE // 2, place_pos[1] * TILE_SIZE + TILE_SIZE // 2], [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.09, (12, 8, 2), False, 0.1])
                     continue
-        if event.type == KEYUP:
-            if event.key in [K_RIGHT, K_d]:
-                state.player.right = False
-            if event.key in [K_LEFT, K_a]:
-                state.player.left = False
+                if random.randint(1, 4) == 1:
+                    side = random.choice([1, -1])
+                    self.sparks.append([[tile[0] + TILE_SIZE * (side == 1), tile[1]], [random.random() * 0.1 - 0.05, random.random() * 0.5], random.random() * 5 + 3, 0.15, (4, 2, 12), False, 0])
+                self.display.blit(tile_img, (tile[0], tile[1] + self.height))
+                if tile[2] == 'chest':
+                    self.display.blit(ghost_chest_img, (tile[0], tile[1] + self.height - TILE_SIZE))
+            self.tile_drop_rects = tile_drop_rects
 
+        def draw_tiles(self):
+            self.tile_rects = []
+            for tile in self.tiles:
+                self.display.blit(tile_img, (TILE_SIZE * tile[0], TILE_SIZE * tile[1] + int(self.height)))
+                if self.tiles[tile] == 'placed_tile':
+                    self.display.blit(placed_tile_img, (TILE_SIZE * tile[0], TILE_SIZE * tile[1] + int(self.height)))
+                if self.tiles[tile] == 'chest':
+                    self.display.blit(chest_img, (TILE_SIZE * tile[0], TILE_SIZE * (tile[1] - 1) + int(self.height)))
+                    chest_r = pygame.Rect(TILE_SIZE * tile[0] + 2, TILE_SIZE * (tile[1] - 1) + 6, TILE_SIZE - 4, TILE_SIZE - 6)
+                    if random.randint(1, 20) == 1:
+                        self.sparks.append([[tile[0] * TILE_SIZE + 2 + 12 * random.random(), (tile[1] - 1) * TILE_SIZE + 4 + 8 * random.random()], [0, random.random() * 0.25 - 0.5], random.random() * 4 + 2, 0.023, (12, 8, 2), True, 0.002])
+                    if chest_r.colliderect(self.player.rect):
+                        sounds['chest_open'].play()
+                        for i in range(50):
+                            self.sparks.append([[tile[0] * TILE_SIZE + 8, (tile[1] - 1) * TILE_SIZE + 8], [random.random() * 2 - 1, random.random() - 2], random.random() * 3 + 3, 0.01, (12, 8, 2), True, 0.05])
+                        self.tiles[tile] = 'opened_chest'
+                        self.player.jumps += 1
+                        self.player.attempt_jump(self.sparks, self.player)
+                        self.player.velocity[1] = -3.5
+                        if random.randint(1, 5) < 3:
+                            self.items.append(Item(animation_manager, (tile[0] * TILE_SIZE + 5, (tile[1] - 1) * TILE_SIZE + 5), (6, 6), random.choice(['warp', 'cube', 'jump']), velocity=[random.random() * 5 - 2.5, random.random() * 2 - 5]))
+                        else:
+                            for i in range(random.randint(2, 6)):
+                                self.items.append(Item(animation_manager, (tile[0] * TILE_SIZE + 5, (tile[1] - 1) * TILE_SIZE + 5), (6, 6), 'coin', velocity=[random.random() * 5 - 2.5, random.random() * 2 - 7]))
+                elif self.tiles[tile] == 'opened_chest':
+                    self.display.blit(opened_chest_img, (TILE_SIZE * tile[0], TILE_SIZE * (tile[1] - 1) + int(self.height)))
+            base_row = max(self.tiles, key=lambda x: x[1])[1] - 1
+            filled = True
+            for i in range(WINDOW_TILE_SIZE[0] - 2):
+                if (i + 1, base_row) not in self.tiles:
+                    filled = False
+            if filled:
+                self.target_height = math.floor(self.height / TILE_SIZE) * TILE_SIZE + TILE_SIZE
+            if self.height != self.target_height:
+                self.height += (self.target_height - self.height) / 10
+                if abs(self.target_height - self.height) < 0.2:
+                    self.height = self.target_height
+                    for i in range(WINDOW_TILE_SIZE[0] - 2):
+                        del self.tiles[(i + 1, base_row + 1)]
+            for i in range(WINDOW_TILE_SIZE[1] + 2):
+                pos_y = (-self.height // 16) - 1 + i
+                self.display.blit(edge_tile_img, (0, TILE_SIZE * pos_y + int(self.height)))
+                self.display.blit(edge_tile_img, (TILE_SIZE * (WINDOW_TILE_SIZE[0] - 1), TILE_SIZE * pos_y + int(self.height)))
+            self.tile_rects.append(pygame.Rect(0, self.player.pos[1] - 300, TILE_SIZE, 600))
+            self.tile_rects.append(pygame.Rect(TILE_SIZE * (WINDOW_TILE_SIZE[0] - 1), self.player.pos[1] - 300, TILE_SIZE, 600))
+            self.base_row = base_row
+
+        def draw_items(self):
+            for i, item in sorted(enumerate(self.items), reverse=True):
+                lookup_pos = (int(item.center[0] // TILE_SIZE), int(item.center[1] // TILE_SIZE))
+                if lookup_pos in self.tiles:
+                    self.items.pop(i)
+                    continue
+                item.update(self.tile_rects + lookup_nearby(self.tiles, item.center))
+                if item.time > 30:
+                    if item.rect.colliderect(self.player.rect):
+                        if item.type == 'coin':
+                            sounds['coin'].play()
+                            self.coins += 1
+                            for j in range(25):
+                                angle = random.random() * math.pi * 2
+                                speed = random.random() * 0.4
+                                physics_on = random.choice([False, False, False, False, True])
+                                self.sparks.append([item.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
+                        else:
+                            sounds['collect_item'].play()
+                            for j in range(50):
+                                self.sparks.append([item.center.copy(), [random.random() * 0.3 - 0.15, random.random() * 6 - 3], random.random() * 4 + 3, 0.01, (12, 8, 2), False, 0])
+                            self.current_item = item.type
+                        self.items.pop(i)
+                        continue
+                r1 = int(9 + math.sin(self.master_clock / 30) * 3)
+                r2 = int(5 + math.sin(self.master_clock / 40) * 2)
+                self.display.blit(glow_img(r1, (12, 8, 2)), (item.center[0] - r1 - 1, item.center[1] + self.height - r1 - 2), special_flags=BLEND_RGBA_ADD)
+                self.display.blit(glow_img(r2, (24, 16, 3)), (item.center[0] - r2 - 1, item.center[1] + self.height - r2 - 2), special_flags=BLEND_RGBA_ADD)
+                item.render(self.display, (0, -self.height))
+
+        def update_player(self):
+            if not self.dead:
+                self.player.update(self.tile_drop_rects + self.tile_rects + lookup_nearby(self.tiles, self.player.center), self.dead)
+            else:
+                self.player.opacity = 80
+                self.player.update([], self.dead)
+                self.player.rotation -= 16
+            self.player.render(self.display, (0, -int(self.height)))
+
+        def update_sparks(self):
+            for i, spark in sorted(enumerate(self.sparks), reverse=True):
+                if len(spark) < 8:
+                    spark.append(False)
+                if not spark[-1]:
+                    spark[1][1] = min(spark[1][1] + spark[-2], 3)
+                spark[0][0] += spark[1][0]
+                if spark[5]:
+                    if ((int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in self.tiles) or (spark[0][0] < TILE_SIZE) or (spark[0][0] > DISPLAY_SIZE[0] - TILE_SIZE):
+                        spark[0][0] -= spark[1][0]
+                        spark[1][0] *= -0.7
+                spark[0][1] += spark[1][1]
+                if spark[5]:
+                    if (int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in self.tiles:
+                        spark[0][1] -= spark[1][1]
+                        spark[1][1] *= -0.7
+                        if abs(spark[1][1]) < 0.1:
+                            spark[1][1] = 0
+                            spark[-1] = True
+                spark[2] -= spark[3]
+                if spark[2] <= 1:
+                    self.sparks.pop(i)
+                else:
+                    self.display.blit(glow_img(int(spark[2] * 1.5 + 2), (int(spark[4][0] / 2), int(spark[4][1] / 2), int(spark[4][2] / 2))), (spark[0][0] - spark[2] * 2, spark[0][1] + self.height - spark[2] * 2), special_flags=BLEND_RGBA_ADD)
+                    self.display.blit(glow_img(int(spark[2]), spark[4]), (spark[0][0] - spark[2], spark[0][1] + self.height - spark[2]), special_flags=BLEND_RGBA_ADD)
+
+        def draw_ui(self):
+            self.display.blit(border_img_light, (0, -math.sin(self.master_clock / 30) * 4 - 7))
+            self.display.blit(border_img, (0, -math.sin(self.master_clock / 40) * 7 - 14))
+            self.display.blit(pygame.transform.flip(border_img_light, False, True), (0, DISPLAY_SIZE[1] + math.sin(self.master_clock / 40) * 3 + 9 - border_img.get_height()))
+            self.display.blit(pygame.transform.flip(border_img, False, True), (0, DISPLAY_SIZE[1] + math.sin(self.master_clock / 30) * 3 + 16 - border_img.get_height()))
+            if not self.dead:
+                self.display.blit(coin_icon, (4, 4))
+                black_font.render(str(self.coins), self.display, (13, 6))
+                white_font.render(str(self.coins), self.display, (12, 5))
+                self.display.blit(item_slot_img, (DISPLAY_SIZE[0] - 20, 4))
+                if self.current_item:
+                    if (self.master_clock % 50 < 12) or (abs(self.master_clock % 50 - 20) < 3):
+                        self.display.blit(item_slot_flash_img, (DISPLAY_SIZE[0] - 20, 4))
+                    self.display.blit(item_icons[self.current_item], (DISPLAY_SIZE[0] - 15, 9))
+                    if not self.item_used:
+                        if (self.master_clock % 100 < 80) or (abs(self.master_clock % 100 - 90) < 3):
+                            black_font.render('press E/X to use', self.display, (DISPLAY_SIZE[0] - white_font.width('press E/X to use') - 23, 10))
+                            white_font.render('press E/X to use', self.display, (DISPLAY_SIZE[0] - white_font.width('press E/X to use') - 24, 9))
+            else:
+                black_font.render('game over', self.display, (DISPLAY_SIZE[0] // 2 - white_font.width('game over') // 2 + 1, 51))
+                white_font.render('game over', self.display, (DISPLAY_SIZE[0] // 2 - white_font.width('game over') // 2, 50))
+                coin_count_width = white_font.width(str(self.end_coin_count))
+                self.display.blit(coin_icon, (DISPLAY_SIZE[0] // 2 - (coin_count_width + 4 + coin_icon.get_width()) // 2, 63))
+                black_font.render(str(self.end_coin_count), self.display, ((DISPLAY_SIZE[0] + 5 + coin_icon.get_width()) // 2 - coin_count_width // 2, 65))
+                white_font.render(str(self.end_coin_count), self.display, ((DISPLAY_SIZE[0] + 4 + coin_icon.get_width()) // 2 - coin_count_width // 2, 64))
+                if self.master_clock % 3 == 0:
+                    if self.end_coin_count != self.coins:
+                        sounds['coin_end'].play()
+                    self.end_coin_count = min(self.end_coin_count + 1, self.coins)
+                if (self.master_clock % 100 < 80) or (abs(self.master_clock % 100 - 90) < 3):
+                    black_font.render('press R to restart', self.display, (DISPLAY_SIZE[0] // 2 - white_font.width('press R to restart') // 2 + 1, 79))
+                    white_font.render('press R to restart', self.display, (DISPLAY_SIZE[0] // 2 - white_font.width('press R to restart') // 2, 78))
+
+        def handle_events(self):
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        pygame.quit()
+                        sys.exit()
+                    if event.key in [K_RIGHT, K_d]:
+                        self.player.right = True
+                    if event.key in [K_LEFT, K_a]:
+                        self.player.left = True
+                    if event.key in [K_UP, K_w, K_SPACE]:
+                        if not self.dead:
+                            if self.player.jumps:
+                                sounds['jump'].play()
+                        self.player.attempt_jump(self.sparks, self.player)
+                    if event.key in [K_e, K_x]:
+                        if not self.dead:
+                            if self.current_item:
+                                self.item_used = True
+                            if self.current_item == 'warp':
+                                sounds['warp'].play()
+                                max_point = min(enumerate(self.stack_heights), key=lambda x: x[1])
+                                for i in range(60):
+                                    angle = random.random() * math.pi * 2
+                                    speed = random.random() * 3
+                                    physics_on = random.choice([False, True])
+                                    self.sparks.append([self.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
+                                self.player.pos[0] = (max_point[0] + 1) * TILE_SIZE + 4
+                                self.player.pos[1] = (max_point[1] - 1) * TILE_SIZE
+                                for i in range(60):
+                                    angle = random.random() * math.pi * 2
+                                    speed = random.random() * 1.75
+                                    physics_on = random.choice([False, True, True])
+                                    self.sparks.append([self.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
+                            if self.current_item == 'jump':
+                                sounds['super_jump'].play()
+                                self.player.jumps += 1
+                                self.player.attempt_jump(self.sparks, self.player)
+                                self.player.velocity[1] = -8
+                                for i in range(60):
+                                    angle = random.random() * math.pi / 2 + math.pi / 4
+                                    if random.randint(1, 5) == 1:
+                                        angle = -math.pi / 2
+                                    speed = random.random() * 3
+                                    physics_on = random.choice([False, True])
+                                    self.sparks.append([self.player.center.copy(), [math.cos(angle) * speed, math.sin(angle) * speed], random.random() * 3 + 3, 0.02, (12, 8, 2), physics_on, 0.1 * physics_on])
+                            if self.current_item == 'cube':
+                                sounds['block_land'].play()
+                                place_pos = (int(self.player.center[0] // TILE_SIZE), int(self.player.pos[1] // TILE_SIZE) + 1)
+                                self.stack_heights[place_pos[0] - 1] = place_pos[1]
+                                for i in range(place_pos[1], self.base_row + 2):
+                                    self.tiles[(place_pos[0], i)] = 'placed_tile'
+                                    for j in range(8):
+                                        self.sparks.append([[place_pos[0] * TILE_SIZE + TILE_SIZE, i * TILE_SIZE + j * 2], [random.random() * 0.5, random.random() * 0.5 - 0.25], random.random() * 4 + 4, 0.02, (12, 8, 2), False, 0])
+                                        self.sparks.append([[place_pos[0] * TILE_SIZE, i * TILE_SIZE + j * 2], [-random.random() * 0.5, random.random() * 0.5 - 0.25], random.random() * 4 + 4, 0.02, (12, 8, 2), False, 0])
+                            self.current_item = None
+                    if event.key == K_r:
+                        if self.dead:
+                            new_state = init_game_state()
+                            for k in self.__dict__.keys():
+                                setattr(self, k, getattr(new_state, k))
+                            continue
+                if event.type == KEYUP:
+                    if event.key in [K_RIGHT, K_d]:
+                        self.player.right = False
+                    if event.key in [K_LEFT, K_a]:
+                        self.player.left = False
+
+    return GameState()
 
 main()
