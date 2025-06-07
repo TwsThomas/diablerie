@@ -1,12 +1,8 @@
-# this is very spaghetti because it was written in under 8 hours
-
-# === Standard library imports ===
 import os
 import sys
 import random
 import math
 
-# === Pygame imports ===
 import pygame
 from pygame.locals import *
 
@@ -187,29 +183,8 @@ def glow_img(size, color):
         GLOW_CACHE[(size, color)] = surf
     return GLOW_CACHE[(size, color)]
 
-# === Main entry point ===
-def main():
-    setup_pygame()
-    state = init_game_state()
-    while True:
-        display = state.display
-        display.fill((22, 19, 40))
-        state.master_clock += 1
-        state.update_bg_particles()
-        state.handle_tile_drops()
-        state.draw_tiles()
-        state.draw_items()
-        state.update_player()
-        state.update_sparks()
-        state.draw_ui()
-        state.handle_events()
-        state.screen.blit(pygame.transform.scale(display, state.screen.get_size()), (0, 0))
-        pygame.display.update()
-        state.clock.tick(60)
-
 
 def init_game_state():
-    # All game state variables in a class for easy passing
     class GameState:
         def __init__(self):
             self.clock: pygame.time.Clock = pygame.time.Clock()
@@ -542,5 +517,27 @@ def init_game_state():
                         self.player.left = False
 
     return GameState()
+
+
+# === Main entry point ===
+def main():
+    setup_pygame()
+    state = init_game_state()
+    while True:
+        display = state.display
+        display.fill((22, 19, 40))
+        state.master_clock += 1
+        state.update_bg_particles()
+        state.handle_tile_drops()
+        state.draw_tiles()
+        state.draw_items()
+        state.update_player()
+        state.update_sparks()
+        state.draw_ui()
+        state.handle_events()
+        state.screen.blit(pygame.transform.scale(display, state.screen.get_size()), (0, 0))
+        pygame.display.update()
+        state.clock.tick(60) # Cap at 60 FPS
+
 
 main()
