@@ -41,6 +41,7 @@ sounds['coin'].set_volume(0.6)
 sounds['chest_open'].set_volume(0.8)
 sounds['coin_end'] = pygame.mixer.Sound('data/sfx/coin.wav')
 sounds['coin_end'].set_volume(0.35)
+sounds['warning'] = sounds['coin']
 
 # === Item icons for UI ===
 item_icons = {
@@ -88,6 +89,8 @@ def warning(*args):
     # Draw the warning message on the left
     font = pygame.font.SysFont("Arial", 10)
     text = font.render(msg, True, (255, 255, 0))  # Yellow for warnings
+    # play a sound effect for warnings
+    sounds['warning'].play()
     screen.blit(text, (10, 10 + len(debug_lines) * 14))
 
 def error(*args):
@@ -101,4 +104,6 @@ def error(*args):
     # Draw the error message on the left
     font = pygame.font.SysFont("Arial", 10)
     text = font.render(msg, True, (255, 0, 0))  # Red for errors
+    # play a sound effect for errors
+    sounds['warning'].play()
     screen.blit(text, (10, 10 + len(debug_lines) * 14))

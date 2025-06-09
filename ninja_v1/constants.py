@@ -1,12 +1,15 @@
-
 import pygame
 import os
 
 # Macbook : 2560 × 1600
 TILE_SIZE = 32
 LEVEL_ROWS = 15
-LEVEL_COLS = 40
-DISPLAY_SIZE = (TILE_SIZE * LEVEL_COLS, TILE_SIZE * LEVEL_ROWS)
+LEVEL_COLS = 30
+# Margins for display
+LEFT_MARGIN = 100
+BOTTOM_MARGIN = 50
+# Update DISPLAY_SIZE to account for margins
+DISPLAY_SIZE = (TILE_SIZE * LEVEL_COLS + LEFT_MARGIN, TILE_SIZE * LEVEL_ROWS + BOTTOM_MARGIN)
 FPS = 60
 
 debug_lines = []

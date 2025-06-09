@@ -1,9 +1,9 @@
 # --- Level grid logic ---
 import pygame
 
-from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE
+from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE, LEFT_MARGIN
 from utils import debug, warning, error
-from screen import display_img
+from screen import display_block, display_img
 
 def create_base_level(rows = LEVEL_ROWS, cols = LEVEL_COLS):
     """Create a grid with specified rows and columns."""
@@ -36,28 +36,23 @@ def load_level(filename="new_level.lvl"):
 
 
 def display_grid(grid):
-    """Display the grid on the screen."""
+    """Display the grid on the screen, offset by margins."""
     print(f"Displaying grid: {len(grid)} rows, {len(grid[0]) if grid else 0} columns")
     for row in range(len(grid)):
         for col in range(len(grid[row])):
             cell = grid[row][col]
-            if cell is None:
+            display_block(row, col, cell)
                 pass
             else:
-                img = blocks.get(cell)
-                if img:
-                    display_img((col * TILE_SIZE, row * TILE_SIZE), img)
-                    debug(f"Displayed '{cell}' at ({row}, {col})")
-                else:
-                    warning(f"Warning: No image found for cell '{cell}' at ({row}, {col})")
-
+                display_block(row, col, cell)
+                
 def show_grid_border(grid):
-    """Display the grid border."""
+    """Display the grid border, offset by margins."""
     for row in range(len(grid)):
         for col in range(len(grid[row])):
             pygame.draw.rect(
                 pygame.display.get_surface(),
-                colors["grey"],
-                (col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE),
-                1,
+                colors['grey'],
+                (LEFT_MARGIN + col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE),
+                1
             )
