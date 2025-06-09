@@ -1,0 +1,3 @@
+# Level file for ninja_v1
+# 15x40 grid, bottom 3 rows are 'block', rest are None
+# This file is auto-generated
