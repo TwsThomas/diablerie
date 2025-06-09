@@ -7,7 +7,8 @@ import pygame
 from data.scripts.anim_loader import AnimationManager  # Handles loading and managing animations
 from data.scripts.text import Font  # Custom bitmap font rendering
 
-from data.scripts.entity import Entity
+from constants import screen, debug_lines
+
 # === Utility function to load images with transparency ===
 def load_img(path):
     # Ensure display is set before loading images
@@ -59,3 +60,45 @@ def reduce_abs(val, amt):
     else:
         val = 0
     return val
+
+
+def debug(*args):
+    global debug_lines
+    print("DEBUG:", *args)
+    # Add the debug message to the list
+    msg = " ".join(map(str, args))
+    debug_lines.append(msg)
+    # Limit the number of lines to avoid overflow
+    if len(debug_lines) > 20:
+        debug_lines = debug_lines[-20:]
+    # Draw all debug lines on the left, stacked vertically
+    font = pygame.font.SysFont("Arial", 10)
+    for i, line in enumerate(debug_lines):
+        text = font.render(line, True, (255, 255, 255))
+        screen.blit(text, (10, 10 + i * 14))
+
+def warning(*args):
+    """ Prints a warning message to the console and adds it to the debug lines. """
+    global debug_lines
+    msg = "WARNING: " + " ".join(map(str, args))
+    print(msg)
+    debug_lines.append(msg)
+    if len(debug_lines) > 20:
+        debug_lines = debug_lines[-20:]
+    # Draw the warning message on the left
+    font = pygame.font.SysFont("Arial", 10)
+    text = font.render(msg, True, (255, 255, 0))  # Yellow for warnings
+    screen.blit(text, (10, 10 + len(debug_lines) * 14))
+
+def error(*args):
+    """ Prints an error message to the console and adds it to the debug lines. """
+    global debug_lines
+    msg = "ERROR: " + " ".join(map(str, args))
+    print(msg, file=sys.stderr)
+    debug_lines.append(msg)
+    if len(debug_lines) > 20:
+        debug_lines = debug_lines[-20:]
+    # Draw the error message on the left
+    font = pygame.font.SysFont("Arial", 10)
+    text = font.render(msg, True, (255, 0, 0))  # Red for errors
+    screen.blit(text, (10, 10 + len(debug_lines) * 14))
