@@ -6,12 +6,14 @@ import math
 import pygame
 from pygame.locals import *
 
+
 pygame.init()
 pygame.display.set_caption("Diablerie")
 pygame.mouse.set_visible(True)
 
 from constants import *
 from utils import *
+from control import handle_keyboard, handle_mouse
 from spark import draw_sparkles
 from level import load_level, save_level, display_grid, create_base_level
 from screen import display_img
@@ -22,15 +24,14 @@ from data.scripts.entity import (
 
 
 
-
-
 def main():
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            handle_mouse(event)
+            handle_mouse(event, grid, state=None)
+            handle_keyboard(event, grid, state=None)
 
         pygame.display.update()
         clock.tick(FPS)

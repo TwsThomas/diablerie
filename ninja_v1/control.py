@@ -1,11 +1,22 @@
-from ninja_v1.constants import DISPLAY_SIZE, blocks, colors, screen, debug
-from ninja_v1.screen import display_img
+from constants import DISPLAY_SIZE, blocks, colors, screen
+from utils import debug, warning, error
+from screen import display_img
+from level import show_grid_border
 import pygame
 import os
 
 
+def handle_keyboard(event, grid, state=None):
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+            pygame.quit()
+            os._exit(0)  # Exit the program
+        elif event.key == pygame.K_g:
+            # display grid border
+            show_grid_border(grid)
 
-def handle_mouse(event, state = None):
+
+def handle_mouse(event, grid, state=None):
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
         pos = event.pos
         pygame.draw.circle(screen, colors["click_start"], pos, 7)
@@ -55,4 +66,3 @@ def handle_mouse(event, state = None):
             (pos[0] - 3, pos[1] - 3),
         ]
         pygame.draw.polygon(screen, colors["star"], star_points)
-
