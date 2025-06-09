@@ -2,11 +2,11 @@
 import pygame
 from typing import List, Optional
 
-from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE, LEFT_MARGIN, TOP_MARGIN
+from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE, LEFT_MARGIN, TOP_MARGIN, state
 from utils import debug, warning, error
 from screen import display_block, display_img
 
-def create_base_level(rows = LEVEL_ROWS, cols = LEVEL_COLS):
+def create_base_level(rows = LEVEL_ROWS, cols = LEVEL_COLS) -> List[List[Optional[str]]]:
     """Create a grid with specified rows and columns."""
     grid = []
     for row in range(rows):
@@ -29,7 +29,7 @@ def save_level(grid, filename="new_level.lvl"):
     print(f"Level saved to {filename}")
 
 
-def load_level(filename="new_level.lvl"):
+def load_level(filename="new_level.lvl") -> List[List[Optional[str]]]:
     """Load the grid from a file."""
     grid = []
     with open(filename, "r") as f:
@@ -40,11 +40,11 @@ def load_level(filename="new_level.lvl"):
     return grid
 
 
-def display_grid(grid: List[List[Optional[str]]]) -> None:
+def display_grid() -> None:
     """Display the grid with display_block for each cell."""
-    print(f"Displaying grid: {len(grid)} rows, {len(grid[0]) if grid else 0} columns")
-    for row in range(len(grid)):
-        for col in range(len(grid[row])):
-            cell = grid[row][col]
+    print(f"Displaying grid: {len(state.grid)} rows, {len(state.grid[0]) if state.grid else 0} columns")
+    for row in range(len(state.grid)):
+        for col in range(len(state.grid[row])):
+            cell = state.grid[row][col]
             display_block(row, col, cell)
 

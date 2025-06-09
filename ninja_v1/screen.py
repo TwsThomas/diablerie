@@ -15,10 +15,10 @@ def display_block(row: int, col: int, block_type: str = "block") -> None:
 def display_img(pos: Tuple[int, int], img: pygame.Surface) -> None:
     screen.blit(img, pos)
 
-def show_grid_border(grid: List[List[Optional[str]]]) -> None:
+def show_grid_border() -> None:
     """Display the grid border, offset by margins."""
-    for row in range(len(grid)):
-        for col in range(len(grid[row])):
+    for row in range(len(state.grid)):
+        for col in range(len(state.grid[row])):
             pygame.draw.rect(
                 pygame.display.get_surface(),
                 colors['grey'],

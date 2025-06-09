@@ -7,10 +7,10 @@ TILE_SIZE: int = 32
 LEVEL_ROWS: int = 15
 LEVEL_COLS: int = 30
 # Margins for display
-LEFT_MARGIN: int = 100
+LEFT_MARGIN: int = 120
 BOTTOM_MARGIN: int = 50
 TOP_MARGIN: int = 50
-RIGHT_MARGIN: int = 100
+RIGHT_MARGIN: int = 50
 # Update DISPLAY_SIZE to account for all margins
 DISPLAY_SIZE: Tuple[int, int] = (
     TILE_SIZE * LEVEL_COLS + LEFT_MARGIN + RIGHT_MARGIN,
@@ -53,29 +53,33 @@ colors: Dict[str, Tuple[int, int, int]] = {
     "debug_text": (255, 255, 255),
     "console_border": (100, 100, 100),
     "left_margin": (30, 30, 30),
-    "bottom_margin": (30, 30, 30),
+    "right_margin": (30, 40, 30),
+    "top_margin": (40, 30, 30),
+    "bottom_margin": (30, 30, 40),
     "grey": (100, 100, 100),
 }
 
 class State:
     def __init__(self):
-        self.current_block: Optional[str] = None  # Current block type to place
+        self.current_block: Optional[str] = 'block'  # Current block type to place
         self.grid: list[list[Optional[str]]] = []  # The grid of blocks
         self.mouse_pos: Tuple[int, int] = (0, 0)  # Current mouse position
         self.selected_cell: Optional[Tuple[int, int]] = None  # Cell currently selected by mouse
         self.console_visible: bool = False  # Whether the console is visible
         self.console_text: str = ""  # Text in the console
         self.debug_lines: list[str] = []
+        self.grid = None
 
     def reset(self):
         """Reset the state to its initial values."""
-        self.current_block = None
+        self.current_block = 'block'
         self.grid = []
         self.mouse_pos = (0, 0)
         self.selected_cell = None
         self.console_visible = False
         self.console_text = ""
         self.debug_lines = []
+        self.grid = None
         print("State reset to initial values.")
 
 state = State()  # Global state object to hold current game state

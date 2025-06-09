@@ -8,7 +8,7 @@ import pygame
 from data.scripts.anim_loader import AnimationManager  # Handles loading and managing animations
 from data.scripts.text import Font  # Custom bitmap font rendering
 
-from constants import screen, state
+from constants import *
 
 # === Utility function to load images with transparency ===
 def load_img(path):
@@ -73,13 +73,14 @@ def debug(*args: Any) -> None:
     msg = " ".join(map(str, args))
     state.debug_lines.append(msg)
     # Limit the number of lines to avoid overflow
-    if len(state.debug_lines) > 20:
-        state.debug_lines = state.debug_lines[-20:]
+    if len(state.debug_lines) > 30:
+        state.debug_lines = state.debug_lines[-30:]
     # Draw all debug lines on the left, stacked vertically
     font = pygame.font.SysFont("Arial", 10)
     for i, line in enumerate(state.debug_lines):
         text = font.render(line, True, (255, 255, 255))
-        screen.blit(text, (10, 10 + i * 14))
+        screen.blit(text, (10, TOP_MARGIN + 10 + i * 14))
+
 
 def warning(*args: Any) -> None:
     """ Prints a warning message to the console and adds it to the debug lines. """
@@ -93,7 +94,8 @@ def warning(*args: Any) -> None:
     text = font.render(msg, True, (255, 255, 0))  # Yellow for warnings
     # play a sound effect for warnings
     sounds['warning'].play()
-    screen.blit(text, (10, 10 + len(state.debug_lines) * 14))
+    screen.blit(text, (10, TOP_MARGIN + 10 + len(state.debug_lines) * 14))
+
 
 def error(*args: Any) -> None:
     """ Prints an error message to the console and adds it to the debug lines. """
@@ -107,4 +109,4 @@ def error(*args: Any) -> None:
     text = font.render(msg, True, (255, 0, 0))  # Red for errors
     # play a sound effect for errors
     sounds['warning'].play()
-    screen.blit(text, (10, 10 + len(state.debug_lines) * 14))
+    screen.blit(text, (10, TOP_MARGIN + 10 + len(state.debug_lines) * 14))

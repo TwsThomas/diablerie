@@ -30,8 +30,8 @@ def main():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
-            handle_mouse(event, grid, state=None)
-            handle_keyboard(event, grid, state=None)
+            handle_mouse(event)
+            handle_keyboard(event)
 
         pygame.display.update()
         clock.tick(FPS)
@@ -42,10 +42,19 @@ screen.fill(colors["background"])
 # fill the margins with the margin color
 pygame.draw.rect(screen, colors["left_margin"], (0, 0, LEFT_MARGIN, DISPLAY_SIZE[1]))
 pygame.draw.rect(screen, colors["bottom_margin"], (0, DISPLAY_SIZE[1] - BOTTOM_MARGIN, DISPLAY_SIZE[0], BOTTOM_MARGIN))
+pygame.draw.rect(screen, colors["right_margin"], (DISPLAY_SIZE[0] - RIGHT_MARGIN, 0, RIGHT_MARGIN, DISPLAY_SIZE[1]))
+pygame.draw.rect(screen, colors["top_margin"], (0, 0, DISPLAY_SIZE[0], TOP_MARGIN))
+
+# write top text 
+font = pygame.font.Font(None, 24)
+text = font.render("Diablerie_v1         " \
+"g : show_grid, < : change_block", True, colors["tile"])
+screen.blit(text, (LEFT_MARGIN + 10, 10))
 
 
 grid = create_base_level()
 save_level(grid, "level.txt")
-grid = load_level("level.txt")
-display_grid(grid)
+
+state.grid = load_level("level.txt")
+display_grid()
 main()
