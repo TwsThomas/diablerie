@@ -56,6 +56,6 @@ screen.blit(text, (LEFT_MARGIN + 10, 10))
 level = create_base_level()
 save_level(level, "level/level.json")
 
-state.level = load_level("level/level.json")
+state.level = load_level("level/a.json")
 display_grid()
 main()

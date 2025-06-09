@@ -24,21 +24,12 @@ def handle_keyboard(event):
             next_block_type = all_blocks[(all_blocks.index(state.current_block) + 1) % len(all_blocks)]
             state.current_block = next_block_type
             display_block(1,1, state.current_block)
+
         elif event.key == pygame.K_s:
-            # get user input for filename
-            import tkinter as tk
-            from tkinter import simpledialog
-            root = tk.Tk()
-            root.withdraw()
-            name = simpledialog.askstring("Save Level", "Enter filename to save:", initialvalue="my_level")
-            root.destroy()
+            name = pygame_filename_input("Sauvegarder :", default="")
             filename = f"level/{name}.json" if name else "level/no_name.json"
             save_level(state.level, filename)
             debug(f"Level saved to {filename}")
-
-        elif event.key == pygame.K_d:
-            # implement a simple filename input box using Pygame only
-            
 
 def handle_mouse(event):
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
@@ -95,3 +86,43 @@ def handle_mouse(event):
             (pos[0] - 3, pos[1] - 3),
         ]
         pygame.draw.polygon(screen, colors["star"], star_points)
+
+def pygame_filename_input(prompt: str = "Enter filename:", default: str = "") -> str:
+    """Display a simple filename input box using Pygame only. Returns the entered filename or None if cancelled."""
+    font = pygame.font.SysFont("Arial", 24)
+    input_box = pygame.Rect(DISPLAY_SIZE[0] // 2 - 150, DISPLAY_SIZE[1] // 2 - 25, 300, 50)
+    color_inactive = colors['console_border']
+    color_active = colors['star']
+    color = color_inactive
+    active = True
+    text = default
+    done = False
+    clock = pygame.time.Clock()
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                os._exit(0)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return text.strip() if text.strip() else None
+                elif event.key == pygame.K_ESCAPE:
+                    return None
+                elif event.key == pygame.K_BACKSPACE:
+                    text = text[:-1]
+                else:
+                    if len(text) < 32 and event.unicode.isprintable():
+                        text += event.unicode
+        # Draw background overlay
+        overlay = pygame.Surface(DISPLAY_SIZE, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 10))
+        screen.blit(overlay, (0, 0))
+        # Draw input box
+        pygame.draw.rect(screen, color, input_box, 2)
+        prompt_surf = font.render(prompt, True, colors['debug_text'])
+        screen.blit(prompt_surf, (input_box.x + 10, input_box.y - 30))
+        txt_surface = font.render(text, True, colors['debug_text'])
+        screen.blit(txt_surface, (input_box.x + 10, input_box.y + 10))
+        pygame.display.flip()
+        clock.tick(30)
+    return None
