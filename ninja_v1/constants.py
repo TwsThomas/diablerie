@@ -68,18 +68,8 @@ class State:
         self.console_visible: bool = False  # Whether the console is visible
         self.console_text: str = ""  # Text in the console
         self.debug_lines: list[str] = []
-        self.grid = None
+        self.level: None
+        self.show_grid = False
 
-    def reset(self):
-        """Reset the state to its initial values."""
-        self.current_block = 'block'
-        self.grid = []
-        self.mouse_pos = (0, 0)
-        self.selected_cell = None
-        self.console_visible = False
-        self.console_text = ""
-        self.debug_lines = []
-        self.grid = None
-        print("State reset to initial values.")
 
 state = State()  # Global state object to hold current game state

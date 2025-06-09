@@ -48,13 +48,14 @@ pygame.draw.rect(screen, colors["top_margin"], (0, 0, DISPLAY_SIZE[0], TOP_MARGI
 # write top text 
 font = pygame.font.Font(None, 24)
 text = font.render("Diablerie_v1         " \
-"g : show_grid, < : change_block", True, colors["tile"])
+"g : show_grid, < : change_block" \
+"s : save_level", True, colors["tile"])
 screen.blit(text, (LEFT_MARGIN + 10, 10))
 
 
-grid = create_base_level()
-save_level(grid, "level.txt")
+level = create_base_level()
+save_level(level, "level/level.json")
 
-state.grid = load_level("level.txt")
+state.level = load_level("level/level.json")
 display_grid()
 main()
