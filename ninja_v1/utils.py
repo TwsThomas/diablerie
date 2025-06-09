@@ -110,3 +110,58 @@ def error(*args: Any) -> None:
     # play a sound effect for errors
     sounds['warning'].play()
     screen.blit(text, (10, TOP_MARGIN + 10 + len(state.debug_lines) * 14))
+
+
+
+def pygame_filename_input(prompt: str = "Enter filename:", default: str = "") -> str:
+    """Display a simple filename input box using Pygame only. Returns the entered filename or None if cancelled."""
+    font = pygame.font.SysFont("Arial", 24)
+    input_box = pygame.Rect(DISPLAY_SIZE[0] // 2 - 150, DISPLAY_SIZE[1] // 2 - 25, 300, 50)
+    color_inactive = colors['console_border']
+    color_active = colors['star']
+    color = color_inactive
+    active = True
+    text = default
+    done = False
+    clock = pygame.time.Clock()
+    result = None
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                os._exit(0)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    result = text.strip() if text.strip() else None
+                    done = True
+                elif event.key == pygame.K_ESCAPE:
+                    result = None
+                    done = True
+                elif event.key == pygame.K_BACKSPACE:
+                    text = text[:-1]
+                else:
+                    if len(text) < 32 and event.unicode.isprintable():
+                        text += event.unicode
+        # Draw background overlay
+        overlay = pygame.Surface(DISPLAY_SIZE, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 10))
+        screen.blit(overlay, (0, 0))
+        # Draw input box
+        pygame.draw.rect(screen, color, input_box, 2)
+        prompt_surf = font.render(prompt, True, colors['debug_text'])
+        screen.blit(prompt_surf, (input_box.x + 10, input_box.y - 30))
+        txt_surface = font.render(text, True, colors['debug_text'])
+        screen.blit(txt_surface, (input_box.x + 10, input_box.y + 10))
+        pygame.display.flip()
+        clock.tick(30)
+
+    # display success message
+    if result is not None:
+        success_surf = font.render(f"Filename '{result}' saved successfully!", True, colors['gold'])
+        screen.blit(success_surf, (DISPLAY_SIZE[0] // 2 - success_surf.get_width() // 2, DISPLAY_SIZE[1] // 2 + 50))
+        pygame.display.flip()
+        pygame.time.delay(4000)  # Show for 4 seconds
+    else:
+        warning("Filename input cancelled or empty.")
+
+    return result

@@ -48,8 +48,9 @@ pygame.draw.rect(screen, colors["top_margin"], (0, 0, DISPLAY_SIZE[0], TOP_MARGI
 # write top text 
 font = pygame.font.Font(None, 24)
 text = font.render("Diablerie_v1         " \
-"g : show_grid, < : change_block" \
-"s : save_level", True, colors["tile"])
+"g : show_grid,    " \
+"< : change_block,    " \
+"s : save_level    ", True, colors["tile"])
 screen.blit(text, (LEFT_MARGIN + 10, 10))
 
 

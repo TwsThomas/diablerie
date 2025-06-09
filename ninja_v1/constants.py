@@ -57,6 +57,7 @@ colors: Dict[str, Tuple[int, int, int]] = {
     "top_margin": (40, 30, 30),
     "bottom_margin": (30, 30, 40),
     "grey": (100, 100, 100),
+    "gold": (255, 215, 0),
 }
 
 class State:

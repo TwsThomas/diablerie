@@ -55,6 +55,9 @@ def save_level(level: Level, filename="new_level.json"):
         "vertical_lines": level.vertical_lines,
         "horizontal_lines": level.horizontal_lines,
     }
+    # create mkdir if it doesn't exist
+    import os
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
 
