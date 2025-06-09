@@ -11,9 +11,9 @@ pygame.display.set_caption('Diablerie')
 pygame.mouse.set_visible(True)
 
 from utils import *
-from data.scripts.entity import Entity  # Base class for all entities (player, items, etc.)
+from data.scripts.entity import Entity  # Base class for all entities (e.g. player, items, enemies)
 
-TILE_SIZE = 16
+# Macbook : 2560 × 1600
 DISPLAY_SIZE = (1092, 256)
 FPS = 60
 grille = []
@@ -37,6 +37,7 @@ blocks = {
 }
 colors = { # cf https://htmlcolorcodes.com/fr/
     'background': (22, 19, 40),
+    'background_dark': (26, 24, 54),
     'tile': (255, 255, 255),
     'horizontal_line': (173, 216, 230),  # pastel blue
     'vertical_line': (255, 140, 0),  # dark orange
@@ -69,10 +70,16 @@ def init_grid():
     pass
 
 
+
+def draw_sparkles(surface, pos, count=8, color=(255, 255, 0), min_radius=2, max_radius=8):
+    """Draw a burst of yellow sparkles at the given position."""
+    return
+
 def handle_mouse(event):
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
         pos = event.pos
         pygame.draw.circle(screen, colors['click_start'], pos, 7)
+        draw_sparkles(screen, pos, count=10, color=colors['star'])
     if event.type == pygame.MOUSEMOTION and event.buttons[0]:  # Left mouse button is pressed
         pos = event.pos
         pygame.draw.circle(screen, colors['click_hover'], pos, 2)
@@ -80,6 +87,7 @@ def handle_mouse(event):
         # Left mouse button released
         pos = event.pos
         pygame.draw.circle(screen, colors['click_end'], pos, 4)
+        draw_sparkles(screen, pos, count=8, color=colors['star'])
     if event.type == pygame.MOUSEWHEEL:
         pos = pygame.mouse.get_pos()
         if event.x < 0 or event.x > 0:
@@ -104,10 +112,56 @@ def handle_mouse(event):
             (pos[0] - 3, pos[1] - 3)   # Left top
         ]
         pygame.draw.polygon(screen, colors['star'], star_points)
+        draw_sparkles(screen, pos, count=12, color=colors['star'])
+
+def sparks(self, pos, vel, size, color, gravity=0.1):
+    
+    for i, spark in sorted(enumerate(self.sparks), reverse=True):
+        if len(spark) < 8:
+            spark.append(False)
+        if not spark[-1]:
+            spark[1][1] = min(spark[1][1] + spark[-2], 3)
+        spark[0][0] += spark[1][0]
+        if spark[5]:
+            if ((int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in self.tiles) or (spark[0][0] < TILE_SIZE) or (spark[0][0] > DISPLAY_SIZE[0] - TILE_SIZE):
+                spark[0][0] -= spark[1][0]
+                spark[1][0] *= -0.7
+        spark[0][1] += spark[1][1]
+        if spark[5]:
+            if (int(spark[0][0] // TILE_SIZE), int(spark[0][1] // TILE_SIZE)) in self.tiles:
+                spark[0][1] -= spark[1][1]
+                spark[1][1] *= -0.7
+                if abs(spark[1][1]) < 0.1:
+                    spark[1][1] = 0
+                    spark[-1] = True
+        spark[2] -= spark[3]
+        if spark[2] <= 1:
+            self.sparks.pop(i)
+        else:
+            self.display.blit(glow_img(int(spark[2] * 1.5 + 2), (int(spark[4][0] / 2), int(spark[4][1] / 2), int(spark[4][2] / 2))), (spark[0][0] - spark[2] * 2, spark[0][1] + self.height - spark[2] * 2), special_flags=BLEND_RGBA_ADD)
+            self.display.blit(glow_img(int(spark[2]), spark[4]), (spark[0][0] - spark[2], spark[0][1] + self.height - spark[2]), special_flags=BLEND_RGBA_ADD)
+
+def glow_img(radius, color):
+    """Create a circular glow image (pygame.Surface) with the given radius and color."""
+    size = radius * 2
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    for r in range(radius, 0, -1):
+        alpha = int(255 * (r / radius) ** 2)
+        pygame.draw.circle(surf, (*color, alpha), (radius, radius), r)
+    return surf
+
+def display_img(surf, pos, img, size=None):
+    """
+    Draw an image (img) onto the surface (surf) at the given position (pos).
+    If size is provided, scale the image to that size before blitting.
+    """
+    if size is not None:
+        img = pygame.transform.smoothscale(img, size)
+    surf.blit(img, pos)
 
 
 def main():
-    screen.fill(colors['background'])
+    screen.fill(colors['background_dark'])
 
     while True:
         for event in pygame.event.get():
