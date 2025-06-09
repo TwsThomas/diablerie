@@ -1,7 +1,8 @@
 # --- Level grid logic ---
 import pygame
+from typing import List, Optional
 
-from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE, LEFT_MARGIN
+from constants import LEVEL_ROWS, LEVEL_COLS, colors, blocks, TILE_SIZE, LEFT_MARGIN, TOP_MARGIN
 from utils import debug, warning, error
 from screen import display_block, display_img
 
@@ -15,6 +16,8 @@ def create_base_level(rows = LEVEL_ROWS, cols = LEVEL_COLS):
             grid.append(["block"] * cols)
         else:
             grid.append([None] * cols)
+
+    print(f"Created base level with {rows} rows and {cols} columns")
     return grid
 
 
@@ -23,6 +26,7 @@ def save_level(grid, filename="new_level.lvl"):
     with open(filename, "w") as f:
         for row in grid:
             f.write(",".join(cell if cell else "." for cell in row) + "\n")
+    print(f"Level saved to {filename}")
 
 
 def load_level(filename="new_level.lvl"):
@@ -32,27 +36,15 @@ def load_level(filename="new_level.lvl"):
         for line in f:
             row = [cell if cell != "." else None for cell in line.strip().split(",")]
             grid.append(row)
+    print(f"Level loaded from {filename}, {len(grid)} rows")
     return grid
 
 
-def display_grid(grid):
-    """Display the grid on the screen, offset by margins."""
+def display_grid(grid: List[List[Optional[str]]]) -> None:
+    """Display the grid with display_block for each cell."""
     print(f"Displaying grid: {len(grid)} rows, {len(grid[0]) if grid else 0} columns")
     for row in range(len(grid)):
         for col in range(len(grid[row])):
             cell = grid[row][col]
             display_block(row, col, cell)
-                pass
-            else:
-                display_block(row, col, cell)
-                
-def show_grid_border(grid):
-    """Display the grid border, offset by margins."""
-    for row in range(len(grid)):
-        for col in range(len(grid[row])):
-            pygame.draw.rect(
-                pygame.display.get_surface(),
-                colors['grey'],
-                (LEFT_MARGIN + col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE),
-                1
-            )
+

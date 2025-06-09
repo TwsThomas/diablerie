@@ -2,12 +2,13 @@ import os
 import sys
 import random
 import math
+from typing import Any, Optional, Callable
 
 import pygame
 from data.scripts.anim_loader import AnimationManager  # Handles loading and managing animations
 from data.scripts.text import Font  # Custom bitmap font rendering
 
-from constants import screen, debug_lines
+from constants import screen, state
 
 # === Utility function to load images with transparency ===
 def load_img(path):
@@ -34,10 +35,13 @@ border_img_light.set_alpha(100)  # Lighter border for UI effect
 white_font = Font('data/fonts/small_font.png', (251, 245, 239))  # White font
 black_font = Font('data/fonts/small_font.png', (0, 0, 1))  # Black font (for shadow)
 
+# Ensure the mixer is initialized before loading sounds
+if not pygame.mixer.get_init():
+    pygame.mixer.init()
 # === Load all sound effects ===
 sounds = {sound.split('/')[-1].split('.')[0] : pygame.mixer.Sound('data/sfx/' + sound) for sound in os.listdir('data/sfx')}
 sounds['block_land'].set_volume(0.5)
-sounds['coin'].set_volume(0.6)
+sounds['coin'].set_volume(0.3)
 sounds['chest_open'].set_volume(0.8)
 sounds['coin_end'] = pygame.mixer.Sound('data/sfx/coin.wav')
 sounds['coin_end'].set_volume(0.35)
@@ -63,47 +67,44 @@ def reduce_abs(val, amt):
     return val
 
 
-def debug(*args):
-    global debug_lines
+def debug(*args: Any) -> None:
     print("DEBUG:", *args)
     # Add the debug message to the list
     msg = " ".join(map(str, args))
-    debug_lines.append(msg)
+    state.debug_lines.append(msg)
     # Limit the number of lines to avoid overflow
-    if len(debug_lines) > 20:
-        debug_lines = debug_lines[-20:]
+    if len(state.debug_lines) > 20:
+        state.debug_lines = state.debug_lines[-20:]
     # Draw all debug lines on the left, stacked vertically
     font = pygame.font.SysFont("Arial", 10)
-    for i, line in enumerate(debug_lines):
+    for i, line in enumerate(state.debug_lines):
         text = font.render(line, True, (255, 255, 255))
         screen.blit(text, (10, 10 + i * 14))
 
-def warning(*args):
+def warning(*args: Any) -> None:
     """ Prints a warning message to the console and adds it to the debug lines. """
-    global debug_lines
     msg = "WARNING: " + " ".join(map(str, args))
     print(msg)
-    debug_lines.append(msg)
-    if len(debug_lines) > 20:
-        debug_lines = debug_lines[-20:]
+    state.debug_lines.append(msg)
+    if len(state.debug_lines) > 20:
+        state.debug_lines = state.debug_lines[-20:]
     # Draw the warning message on the left
     font = pygame.font.SysFont("Arial", 10)
     text = font.render(msg, True, (255, 255, 0))  # Yellow for warnings
     # play a sound effect for warnings
     sounds['warning'].play()
-    screen.blit(text, (10, 10 + len(debug_lines) * 14))
+    screen.blit(text, (10, 10 + len(state.debug_lines) * 14))
 
-def error(*args):
+def error(*args: Any) -> None:
     """ Prints an error message to the console and adds it to the debug lines. """
-    global debug_lines
     msg = "ERROR: " + " ".join(map(str, args))
     print(msg, file=sys.stderr)
-    debug_lines.append(msg)
-    if len(debug_lines) > 20:
-        debug_lines = debug_lines[-20:]
+    state.debug_lines.append(msg)
+    if len(state.debug_lines) > 20:
+        state.debug_lines = state.debug_lines[-20:]
     # Draw the error message on the left
     font = pygame.font.SysFont("Arial", 10)
     text = font.render(msg, True, (255, 0, 0))  # Red for errors
     # play a sound effect for errors
     sounds['warning'].play()
-    screen.blit(text, (10, 10 + len(debug_lines) * 14))
+    screen.blit(text, (10, 10 + len(state.debug_lines) * 14))

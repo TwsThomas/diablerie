@@ -1,6 +1,18 @@
-def draw_sparkles(surface, pos, count=8, color=(255, 255, 0), min_radius=2, max_radius=8):
+import random
+import math
+import pygame
+from typing import List, Optional
+from constants import *
+from utils import debug
+
+def draw_sparkles(surface: pygame.Surface, pos: tuple[int, int], count: int = 8, color: tuple[int, int, int] = (255, 255, 0), min_radius: int = 2, max_radius: int = 8) -> None:
     """Draw a burst of yellow sparkles at the given position."""
-    return
+    for i in range(count):
+        angle = random.uniform(0, 2 * math.pi)
+        radius = random.uniform(min_radius, max_radius)
+        x = int(pos[0] + math.cos(angle) * radius)
+        y = int(pos[1] + math.sin(angle) * radius)
+        pygame.draw.circle(surface, color, (x, y), 1)
 
 def sparks(self, pos, vel, size, color, gravity=0.1):
     

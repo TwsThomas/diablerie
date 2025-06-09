@@ -5,6 +5,7 @@ import math
 
 import pygame
 from pygame.locals import *
+from typing import Optional, Any, Callable, Dict, List, Tuple
 
 
 pygame.init()
@@ -23,7 +24,6 @@ from data.scripts.entity import (
 )  # Base class for all entities (e.g. player, items, enemies)
 
 
-
 def main():
     while True:
         for event in pygame.event.get():
@@ -37,8 +37,12 @@ def main():
         clock.tick(FPS)
 
 
-
+# fill the screen with the background color
 screen.fill(colors["background"])
+# fill the margins with the margin color
+pygame.draw.rect(screen, colors["left_margin"], (0, 0, LEFT_MARGIN, DISPLAY_SIZE[1]))
+pygame.draw.rect(screen, colors["bottom_margin"], (0, DISPLAY_SIZE[1] - BOTTOM_MARGIN, DISPLAY_SIZE[0], BOTTOM_MARGIN))
+
 
 grid = create_base_level()
 save_level(grid, "level.txt")

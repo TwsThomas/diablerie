@@ -1,6 +1,6 @@
 from constants import DISPLAY_SIZE, blocks, colors, screen
 from utils import debug, warning, error
-from screen import display_img
+from screen import display_block, display_img, get_grid_or_margin_cell
 from level import show_grid_border
 import pygame
 import os
@@ -19,9 +19,14 @@ def handle_keyboard(event, grid, state=None):
 def handle_mouse(event, grid, state=None):
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
         pos = event.pos
-        pygame.draw.circle(screen, colors["click_start"], pos, 7)
-        display_img(pos, blocks["block"])
-
+        cell = get_grid_or_margin_cell(pos)
+        if "margin" in cell:
+            debug(f"Clicked on margin: {cell}")
+        elif isinstance(cell, tuple):
+            row, col = cell
+            display_block(row, col, state["current_block"])
+        else:
+            error(f"Invalid cell: {cell}")
     if event.type == pygame.MOUSEMOTION and event.buttons[0]:  # hover
         pos = event.pos
         pygame.draw.circle(screen, colors["click_hover"], pos, 2)

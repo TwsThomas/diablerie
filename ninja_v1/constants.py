@@ -1,24 +1,29 @@
 import pygame
 import os
+from typing import Optional, Tuple, Dict, Any
 
 # Macbook : 2560 × 1600
-TILE_SIZE = 32
-LEVEL_ROWS = 15
-LEVEL_COLS = 30
+TILE_SIZE: int = 32
+LEVEL_ROWS: int = 15
+LEVEL_COLS: int = 30
 # Margins for display
-LEFT_MARGIN = 100
-BOTTOM_MARGIN = 50
-# Update DISPLAY_SIZE to account for margins
-DISPLAY_SIZE = (TILE_SIZE * LEVEL_COLS + LEFT_MARGIN, TILE_SIZE * LEVEL_ROWS + BOTTOM_MARGIN)
-FPS = 60
+LEFT_MARGIN: int = 100
+BOTTOM_MARGIN: int = 50
+TOP_MARGIN: int = 50
+RIGHT_MARGIN: int = 100
+# Update DISPLAY_SIZE to account for all margins
+DISPLAY_SIZE: Tuple[int, int] = (
+    TILE_SIZE * LEVEL_COLS + LEFT_MARGIN + RIGHT_MARGIN,
+    TILE_SIZE * LEVEL_ROWS + TOP_MARGIN + BOTTOM_MARGIN
+)
+FPS: int = 60
 
-debug_lines = []
 os.environ["SDL_VIDEO_WINDOW_POS"] = "0,0"
 pygame.display.set_mode(DISPLAY_SIZE, pygame.NOFRAME | pygame.RESIZABLE)
 
-screen = pygame.display.set_mode(DISPLAY_SIZE)
-clock = pygame.time.Clock()
-blocks = {
+screen: pygame.Surface = pygame.display.set_mode(DISPLAY_SIZE)
+clock: pygame.time.Clock = pygame.time.Clock()
+blocks: Dict[str, pygame.Surface] = {
     "block": pygame.image.load("data/images/tile.png").convert_alpha(),
     "spike": pygame.image.load("img/spike.png").convert_alpha(),
     "door": pygame.image.load("img/door.png").convert_alpha(),
@@ -34,7 +39,8 @@ for key in blocks:
         blocks[key] = pygame.transform.rotate(blocks[key], 180)
     blocks[key] = pygame.transform.scale(blocks[key], (TILE_SIZE, TILE_SIZE))
 
-colors = {  # cf https://htmlcolorcodes.com/fr/
+# cf https://htmlcolorcodes.com/fr/
+colors: Dict[str, Tuple[int, int, int]] = {
     "background": (22, 19, 40),
     "background_dark": (26, 24, 54),
     "tile": (255, 255, 255),
@@ -46,6 +52,30 @@ colors = {  # cf https://htmlcolorcodes.com/fr/
     "star": (255, 215, 0),  # gold color for the star
     "debug_text": (255, 255, 255),
     "console_border": (100, 100, 100),
-    "console_background": (30, 30, 30),
+    "left_margin": (30, 30, 30),
+    "bottom_margin": (30, 30, 30),
     "grey": (100, 100, 100),
 }
+
+class State:
+    def __init__(self):
+        self.current_block: Optional[str] = None  # Current block type to place
+        self.grid: list[list[Optional[str]]] = []  # The grid of blocks
+        self.mouse_pos: Tuple[int, int] = (0, 0)  # Current mouse position
+        self.selected_cell: Optional[Tuple[int, int]] = None  # Cell currently selected by mouse
+        self.console_visible: bool = False  # Whether the console is visible
+        self.console_text: str = ""  # Text in the console
+        self.debug_lines: list[str] = []
+
+    def reset(self):
+        """Reset the state to its initial values."""
+        self.current_block = None
+        self.grid = []
+        self.mouse_pos = (0, 0)
+        self.selected_cell = None
+        self.console_visible = False
+        self.console_text = ""
+        self.debug_lines = []
+        print("State reset to initial values.")
+
+state = State()  # Global state object to hold current game state
