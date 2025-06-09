@@ -1,6 +1,6 @@
 # --- Level grid logic ---
 import pygame
-from typing import List, Optional
+from typing import List, Optional, Set
 import json
 
 from constants import (
@@ -12,23 +12,10 @@ from constants import (
     LEFT_MARGIN,
     TOP_MARGIN,
     state,
+    Level,
 )
 from utils import debug, warning, error
 from screen import display_block, display_img
-
-
-class Level:
-    def __init__(
-        self,
-        grid: List[List[Optional[str]]] = None,
-        vertical_lines: List[Optional[int]] = None,
-        horizontal_lines: List[Optional[int]] = None,
-        traps: List[Optional[str]] = None,
-    ):
-        self.grid = grid if grid is not None else create_base_level()
-        self.traps = traps if traps is not None else []
-        self.vertical_lines = vertical_lines if vertical_lines is not None else []
-        self.horizontal_lines = horizontal_lines if horizontal_lines is not None else []
 
 
 def create_base_level(rows=LEVEL_ROWS, cols=LEVEL_COLS) -> Level:
@@ -52,8 +39,8 @@ def save_level(level: Level, filename="new_level.json"):
     data = {
         "grid": level.grid,
         "traps": level.traps,
-        "vertical_lines": level.vertical_lines,
-        "horizontal_lines": level.horizontal_lines,
+        "vertical_lines": (level.vertical_lines),
+        "horizontal_lines": (level.horizontal_lines),
     }
     # create mkdir if it doesn't exist
     import os
@@ -69,10 +56,13 @@ def load_level(filename="new_level.json") -> Level:
             data = json.load(f)
         grid = data.get("grid", [])
         traps = data.get("traps", [])
-        vertical_lines = data.get("vertical_lines", [])
-        horizontal_lines = data.get("horizontal_lines", [])
+        vertical_lines = (data.get("vertical_lines", []))
+        horizontal_lines = (data.get("horizontal_lines", []))
         level = Level(grid, vertical_lines, horizontal_lines, traps)
-        print(f"Loaded level from {filename} with {len(level.grid)} rows and {len(level.grid[0]) if level.grid else 0} columns")
+        print(f"Loaded level from '{filename}' with {len(level.grid)} rows and {len(level.grid[0]) if level.grid else 0} columns")
+        print(f"Traps: {level.traps}")
+        print(f"Vertical lines: {level.vertical_lines}")
+        print(f"Horizontal lines: {level.horizontal_lines}")
         return level
     except FileNotFoundError:
         warning(f"File {filename} not found. Creating a new level.")

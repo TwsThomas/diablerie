@@ -22,8 +22,8 @@ def add_h_line(pos, event):
             (DISPLAY_SIZE[0] - RIGHT_MARGIN, pos[1]),
             2,
         )
-        state.level.horizontal_lines.append(pos[1])
-        debug(f"Added horizontal line at {pos[1]}")
+        if pos[1] not in state.level.horizontal_lines:
+            state.level.horizontal_lines.append(pos[1])
     else:
         warning("Invalid mouse event for adding horizontal line")
 
@@ -37,8 +37,8 @@ def add_v_line(pos):
         (pos[0], DISPLAY_SIZE[1] - BOTTOM_MARGIN),
         2,
     )
-    state.level.vertical_lines.append(pos[0])
-    debug(f"Added vertical line at {pos[0]}")
+    if pos[0] not in state.level.vertical_lines:
+        state.level.vertical_lines.append(pos[0])
 
 def remove_block(row, col):
     """Remove the block at the specified row and column."""

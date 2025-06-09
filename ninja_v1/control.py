@@ -15,7 +15,7 @@ from constants import (
 from typing import Tuple, Dict, Any
 from editor import add_block, add_h_line, add_v_line, remove_block
 from utils import debug, warning, error, pygame_filename_input
-from screen import display_block, display_img, get_grid_or_margin_cell, show_grid_border
+from screen import display_block, display_img, get_grid_or_margin_cell, show_grid_border, show_lines
 from level import save_level
 import pygame
 import os
@@ -23,16 +23,17 @@ import os
 
 def handle_keyboard(event):
     if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_ESCAPE:
+        if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
+            debug("Exiting the game...")
             pygame.quit()
             os._exit(0)  # Exit the program
         elif event.key == pygame.K_g:
-            if not state.show_grid:
-                show_grid_border(colors["grey"])
-                state.show_grid = True
-            else:
-                show_grid_border(colors["background"])
-                state.show_grid = False
+            show_grid_border(colors["background"] if state.show_grid else None)
+            state.show_grid = not state.show_grid
+        elif event.key == pygame.K_l:
+            show_lines(colors["background"] if state.show_lines else None)
+            state.show_lines = not state.show_lines
+
         elif event.key == pygame.K_b or event.key == pygame.K_LESS:
             all_blocks = list(blocks.keys())
             next_block_type = all_blocks[
@@ -76,7 +77,7 @@ def handle_mouse(event):
         pos = event.pos
         pygame.draw.circle(screen, colors["click_end"], pos, 2)
 
-    if event.type == pygame.MOUSEWHEEL:
+    if event.type == pygame.MOUSEWHEEL:  # Mouse wheel scrolled
         pos = pygame.mouse.get_pos()
         if event.x < 0 or event.x > 0:
             add_h_line(pos, event)
@@ -87,24 +88,23 @@ def handle_mouse(event):
     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         pos = event.pos
         cell = get_grid_or_margin_cell(pos)
-        remove_block(cell[0], cell[1]) if isinstance(cell, tuple) else None
         if "margin" in cell:
             debug(f"Right Click on margin: {cell}")
         elif isinstance(cell, tuple):
             row, col = cell
-            add_block(row, col, "spike")
+            remove_block(row, col)
         else:
             error(f"Invalid cell: {cell}")
 
-        # draw gold star shape at the position
+        # draw gold small star shape at the position
         star_points = [
-            (pos[0], pos[1] - 10),
-            (pos[0] + 3, pos[1] - 3),
-            (pos[0] + 10, pos[1]),
-            (pos[0] + 3, pos[1] + 3),
-            (pos[0], pos[1] + 10),
-            (pos[0] - 3, pos[1] + 3),
-            (pos[0] - 10, pos[1]),
-            (pos[0] - 3, pos[1] - 3),
+            (pos[0], pos[1] - 5),
+            (pos[0] + 2, pos[1] - 2),
+            (pos[0] + 5, pos[1]),
+            (pos[0] + 2, pos[1] + 2),
+            (pos[0], pos[1] + 5),
+            (pos[0] - 2, pos[1] + 2),
+            (pos[0] - 5, pos[1]),
+            (pos[0] - 2, pos[1] - 2),
         ]
         pygame.draw.polygon(screen, colors["star"], star_points)

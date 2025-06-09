@@ -5,7 +5,7 @@ from utils import debug, warning
 
 def display_block(row: int, col: int, block_type: str = "block") -> None:
     if block_type is None:
-        return
+        block_type = "empty"
     img = blocks.get(block_type)
     if img:
         display_img((LEFT_MARGIN + col * TILE_SIZE, TOP_MARGIN + row * TILE_SIZE), img)
@@ -15,16 +15,34 @@ def display_block(row: int, col: int, block_type: str = "block") -> None:
 def display_img(pos: Tuple[int, int], img: pygame.Surface) -> None:
     screen.blit(img, pos)
 
-def show_grid_border(color) -> None:
+def show_grid_border(color: Tuple[int, int, int] = None) -> None:
     """Display the grid border, offset by margins."""
     for row in range(len(state.level.grid)):
         for col in range(len(state.level.grid[row])):
             pygame.draw.rect(
                 pygame.display.get_surface(),
-                color,
+                colors["grey"] if color is None else color,
                 (LEFT_MARGIN + col * TILE_SIZE, TOP_MARGIN + row * TILE_SIZE, TILE_SIZE, TILE_SIZE),
                 1
             )
+
+def show_lines(color: Tuple[int, int, int] = None) -> None:
+    for h_line in state.level.horizontal_lines:
+        pygame.draw.line(
+            screen,
+            colors["horizontal_line"] if color is None else color,
+            (LEFT_MARGIN, h_line),
+            (DISPLAY_SIZE[0] - RIGHT_MARGIN, h_line),
+            2
+        )
+    for v_line in state.level.vertical_lines:
+        pygame.draw.line(
+            screen,
+            colors["vertical_line"] if color is None else color,
+            (LEFT_MARGIN + v_line, TOP_MARGIN),
+            (LEFT_MARGIN + v_line, TOP_MARGIN + LEVEL_ROWS * TILE_SIZE),
+            2
+        )
 
 
 def get_grid_or_margin_cell(pixel_pos: Tuple[int, int]) -> Union[Tuple[int, int], str, None]:

@@ -160,7 +160,9 @@ def pygame_filename_input(prompt: str = "Enter filename:", default: str = "") ->
         success_surf = font.render(f"Filename '{result}' saved successfully!", True, colors['gold'])
         screen.blit(success_surf, (DISPLAY_SIZE[0] // 2 - success_surf.get_width() // 2, DISPLAY_SIZE[1] // 2 + 50))
         pygame.display.flip()
-        pygame.time.delay(4000)  # Show for 4 seconds
+        pygame.time.delay(1000)  # Show for 1 second
+        pygame.quit()
+        os._exit(0)
     else:
         warning("Filename input cancelled or empty.")
 
