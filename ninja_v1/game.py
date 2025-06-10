@@ -27,6 +27,9 @@ from data.scripts.entity import (
 def main():
     while True:
         for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
             handle_mouse(event)
             handle_keyboard(event)
 

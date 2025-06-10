@@ -44,6 +44,7 @@ def save_level(level: Level, filename="new_level.json"):
     }
     # create mkdir if it doesn't exist
     import os
+
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
         json.dump(data, f, indent=2)
@@ -56,10 +57,12 @@ def load_level(filename="new_level.json") -> Level:
             data = json.load(f)
         grid = data.get("grid", [])
         traps = data.get("traps", [])
-        vertical_lines = (data.get("vertical_lines", []))
-        horizontal_lines = (data.get("horizontal_lines", []))
+        vertical_lines = data.get("vertical_lines", [])
+        horizontal_lines = data.get("horizontal_lines", [])
         level = Level(grid, vertical_lines, horizontal_lines, traps)
-        print(f"Loaded level from '{filename}' with {len(level.grid)} rows and {len(level.grid[0]) if level.grid else 0} columns")
+        print(
+            f"Loaded level from '{filename}' with {len(level.grid)} rows and {len(level.grid[0]) if level.grid else 0} columns"
+        )
         print(f"Traps: {level.traps}")
         print(f"Vertical lines: {level.vertical_lines}")
         print(f"Horizontal lines: {level.horizontal_lines}")

@@ -91,12 +91,7 @@ class Level:
 
 class State:
     def __init__(self):
-        self.current_block: Optional[str] = 'block'  # Current block type to place
-        self.grid: list[list[Optional[str]]] = []  # The grid of blocks
-        self.mouse_pos: Tuple[int, int] = (0, 0)  # Current mouse position
-        self.selected_cell: Optional[Tuple[int, int]] = None  # Cell currently selected by mouse
-        self.console_visible: bool = False  # Whether the console is visible
-        self.console_text: str = ""  # Text in the console
+        self.current_block: Optional[str] = 'block'  # Current block type to place in editor
         self.debug_lines: list[str] = []
         self.level: Level = None
         self.show_grid = False
